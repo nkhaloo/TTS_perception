@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>AI-generated Voices Experiment</title>
+  <style>
+    body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; }
+    button { padding: 10px 20px; font-size: 16px; margin: 5px; }
+    #progressContainer { width: 80%; background-color: #eee; height: 10px; margin: 20px auto; border-radius: 5px; }
+    #progressBar { height: 10px; background-color: #4CAF50; width: 0%; border-radius: 5px; }
+    #question, #experimentContainer, #instructionsContainer, #attentionCheck, #conclusionScreen { margin-top: 20px; display: none; }
+    #sliderValue { font-weight: bold; }
+  </style>
+</head>
+
+<body>
+  
+  <!-- Slide 1: Welcome -->
+  <div id="welcomeContainer">
+    <h2>Welcome!</h2>
+    <button id="welcomeNextBtn">Next</button>
+  </div>
+
+  <!-- Slide 2: Instructions -->
+  <div id="instructionsContainer">
+    <p>In this study, you will be hearing some AI-generated voices reading a passage. After listening, you'll answer a question about the voice. You will hear 14 voices total.</p>
+    <button id="startBtn">Click to Begin</button>
+  </div>
+
+  <!-- Attention Check -->
+  <div id="attentionCheck">
+    <audio id="attentionAudio"></audio>
+    <p id="attentionQuestion"></p>
+    <button class="attentionBtn">Dog</button>
+    <button class="attentionBtn">Cat</button>
+    <button class="attentionBtn">Bird</button>
+    <button class="attentionBtn">Monkey</button>
+  </div>
+
+  <!-- Experiment -->
+  <div id="experimentContainer">
+    <audio id="audioPlayer"></audio>
+    <div id="buttonContainer">
+      <button id="playBtn">Play Audio</button>
+      <button id="skipBtn" style="display:none;">Skip Audio (Pilot Only)</button>
+    </div>
+    <div id="progressContainer">
+      <div id="progressBar"></div>
+    </div>
+    <div id="question">
+      <label>On a scale from 1 (least certain) to 10 (most certain), how certain are you that the speaker is African American?</label><br>
+      <input type="range" id="raceSlider" min="1" max="10" value="5">
+      <span id="sliderValue">5</span><br>
+      <button id="continueBtn">Continue to Next Voice</button>
+    </div>
+  </div>
+
+  <!-- Conclusion Screen -->
+  <div id="conclusionScreen">
+    <h2>Your responses have been recorded.</h2>
+    <p>Thank you for your participation in this study! You may now exit out.</p>
+  </div>
+
+<script>
+  const mainAudioFiles = [
+    "BM1.wav","BM2.wav","BM3.wav","BM4.wav","BM5.wav","BM6.wav","BM7.wav",
+    "BF1.wav","BF2.wav","BF3.wav","BF4.wav","BF5.wav","BF6.wav","BF7.wav",
+    "WM1.wav","WM2.wav","WM3.wav","WM4.wav","WM5.wav","WM6.wav","WM7.wav",
+    "WF1.wav","WF2.wav","WF3.wav","WF4.wav","WF5.wav","WF6.wav","WF7.wav"
+  ];
+
+  const shuffledAudio = mainAudioFiles.sort(() => Math.random()-0.5).slice(0,14);
+  
+  const trialOrder = [
+    "attention_check/cat.wav",
+    ...shuffledAudio,
+    "attention_check/dog.wav"
+  ];
+
+  let currentTrial = 0;
+
+  const audioPlayer = document.getElementById('audioPlayer');
+  const playBtn = document.getElementById('playBtn');
+  const skipBtn = document.getElementById('skipBtn');
+  const question = document.getElementById('question');
+  const continueBtn = document.getElementById('continueBtn');
+  const raceSlider = document.getElementById('raceSlider');
+  const sliderValue = document.getElementById('sliderValue');
+  const progressBar = document.getElementById('progressBar');
+  const welcomeContainer = document.getElementById('welcomeContainer');
+  const instructionsContainer = document.getElementById('instructionsContainer');
+  const experimentContainer = document.getElementById('experimentContainer');
+  const welcomeNextBtn = document.getElementById('welcomeNextBtn');
+  const startBtn = document.getElementById('startBtn');
+  const attentionCheck = document.getElementById('attentionCheck');
+  const attentionAudio = document.getElementById('attentionAudio');
+  const attentionQuestion = document.getElementById('attentionQuestion');
+  const attentionButtons = document.querySelectorAll('.attentionBtn');
+  const conclusionScreen = document.getElementById('conclusionScreen');
+  let progressInterval;
+
+  welcomeNextBtn.onclick = () => {
+    welcomeContainer.style.display = 'none';
+    instructionsContainer.style.display = 'block';
+  };
+
+  startBtn.onclick = () => {
+    instructionsContainer.style.display = 'none';
+    runTrial();
+  };
+
+  function runTrial(){
+    if (currentTrial >= trialOrder.length) {
+      showConclusion();
+    } else if (trialOrder[currentTrial].includes("attention_check")){
+      runAttentionCheck();
+    } else {
+      experimentContainer.style.display = 'block';
+      loadCurrentAudio();
+    }
+  }
+
+  function runAttentionCheck(){
+    attentionCheck.style.display = 'block';
+    experimentContainer.style.display = 'none';
+    attentionAudio.src = trialOrder[currentTrial];
+    attentionAudio.play();
+    attentionQuestion.textContent = "What animal did you just hear?";
+    attentionButtons.forEach(btn => btn.onclick = () => {
+      currentTrial++;
+      attentionCheck.style.display = 'none';
+      runTrial();
+    });
+  }
+
+  function loadCurrentAudio(){
+    audioPlayer.src = '../data/soundfiles/' + trialOrder[currentTrial];
+    playBtn.style.display='inline';
+    skipBtn.style.display='none';
+    progressBar.style.width='0%';
+    question.style.display='none';
+    raceSlider.value=5;
+    sliderValue.textContent=raceSlider.value;
+  }
+
+  playBtn.onclick=()=>{
+    audioPlayer.play();
+    playBtn.style.display='none';
+    skipBtn.style.display='inline';
+    progressInterval=setInterval(()=>{
+      progressBar.style.width=((audioPlayer.currentTime/audioPlayer.duration)*100)+'%';
+    },200);
+  };
+
+  skipBtn.onclick=()=>{
+    audioPlayer.pause();
+    audioPlayer.currentTime=0;
+    clearInterval(progressInterval);
+    progressBar.style.width='0%';
+    question.style.display='block';
+    skipBtn.style.display='none';
+  };
+
+  audioPlayer.onended=()=>{
+    clearInterval(progressInterval);
+    progressBar.style.width='100%';
+    question.style.display='block';
+    skipBtn.style.display='none';
+  };
+
+  raceSlider.oninput=()=>{
+    sliderValue.textContent=raceSlider.value;
+  };
+
+  continueBtn.onclick=()=>{
+    console.log(`Rating:${raceSlider.value}, File:${trialOrder[currentTrial]}`);
+    currentTrial++;
+    experimentContainer.style.display='none';
+    runTrial();
+  };
+
+  function showConclusion(){
+    conclusionScreen.style.display='block';
+    experimentContainer.style.display='none';
+    attentionCheck.style.display='none';
+  }
+</script>
+
+</body>
+</html>

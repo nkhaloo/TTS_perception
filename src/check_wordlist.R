@@ -1,0 +1,47 @@
+library(stringr)
+
+# 1. Original word list
+wordlist <- c("peat", "seat", "feet", "deep", "beat", "seek", "teeth", "peak", "sheet", "keep", "beep", "cheek",
+              "kit", "ship", "tip", "fit", "pit", "pick", "tick", "sit", "chip", "sip", "bit", "dip",
+              "tape", "cake", "cape", "date", "gate", "take", "safe", "fake", "fate", "shape", "bait", "sake",
+              "dead", "get", "beg", "bet", "debt", "peck", "deck", "pet", "pep", "vet", "jet", "bed",
+              "gap", "pack", "tap", "sat", "bat", "pat", "cap", "tat", "cat", "fat", "zap", "tax",
+              "dot", "got", "pox", "tot", "jock", "shot", "sock", "dock", "cop", "pot", "not", "box",
+              "soup", "duke", "dupe", "food", "boot", "loop", "kook", "tube", "tooth", "suit", "shoot", "goop", 
+              "caught", "bought", "taught", "thought", "fought", "sought", "moss", "boss", "talk", "loss", "toss",
+              "walk")
+
+# 2. Full passage text
+passage <- tolower("
+I took a seat and had a beep next to my teeth. I bit down. A sudden zap shocked a lazy cat, light on its feet. It jumped onto a deck. It made me want to seek out some mice. I quickly looked at my kit and began to dig some peat next to a shallow pit, mindful not to step in some soft moss, or get stuff on my cheek. My pal wanted to toss some soda at me.
+At a shop, I ate soup, a slice of cake, and a sip of soda, all safe. Outside, a jock who had a sock tossed a baseball bat with a beat. Someone shouted, and I almost shot out of my place.
+A cop helped me pick a gift—a sheet of goop—I asked if it was a dupe. I bought a small wooden box and put it gently in my pack. I felt like I was at my peak.
+At home, I couldn't keep my eyes open and chose to sit on my bed, next to my boot. A quick tick from a clock made me think of a missed date and a tax which had led to debt which was fit.
+A fake duke who had on a suit and a cape spoke about his fate on a ship and how he had once yelled about a dot on a tip of an old map. He has an old tat of a fat tooth who had a tube of paste. He got it when he was caught in a storm just as he saw a dock. Once, he spoke about how he had taken a dip in seas full of fish. He was a kook. Goodness sake.
+I sought to talk to my boss about how I was dead sleepy. Instead, I had a bowl of food, watched a film about a chip, fell asleep, and saw a big gate. I woke up to a shape of someone about to take my tape. I had to beg my pal to go find some and fix the loss.
+Last night, I saw a tiny tot who had a toy. I also saw a vet who made a bet and found a tap. I saw a jet that was mid-flight, and a duck who liked to peck. I saw a skater, about to shoot the gap, a mate who had lots of pep, and a flock of birds who fought about some bait. I saw a pet that sat, who liked a pat. I saw a soda bottle with no cap, and a baby who had chicken pox that runs about a loop. I saw a chute of waste and a pot of gold. A bell sounded loud and deep. I woke up and had one last sleepy thought. I went and took a walk and found some soda. Overall, this taught me some lessons.
+")
+
+# 3. Tokenize and count
+tokens <- str_extract_all(passage, "\\b[a-z]+\\b")[[1]]
+counts <- table(factor(tokens, levels = wordlist))
+
+# 4. Check for missing or duplicated words
+missing <- names(counts[counts == 0])
+duplicates <- names(counts[counts > 1])
+
+# 5. Output results
+if (length(missing) == 0 && length(duplicates) == 0) {
+  cat("✅ All 84 words are used exactly once.\n")
+} else {
+  if (length(missing) > 0) {
+    cat("❌ Missing words:\n")
+    print(missing)
+  }
+  if (length(duplicates) > 0) {
+    cat("⚠️ Duplicated words:\n")
+    print(duplicates)
+  }
+}
+
+
