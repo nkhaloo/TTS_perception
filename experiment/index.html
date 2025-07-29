@@ -8,183 +8,189 @@
     button { padding: 10px 20px; font-size: 16px; margin: 5px; }
     #progressContainer { width: 80%; background-color: #eee; height: 10px; margin: 20px auto; border-radius: 5px; }
     #progressBar { height: 10px; background-color: #4CAF50; width: 0%; border-radius: 5px; }
-    #question, #experimentContainer, #instructionsContainer, #attentionCheck, #conclusionScreen { margin-top: 20px; display: none; }
-    #sliderValue { font-weight: bold; }
+    .slide { display: none; margin-top: 20px; }
+    #choiceContainer { text-align: left; display: inline-block; margin-bottom: 20px; }
+    #sliderWrapper { width: 60%; margin: 10px auto; }
+    input[type="range"] { width: 100%; }
+    .sliderValue { margin-top: 5px; font-weight: bold; }
   </style>
 </head>
-
 <body>
-  
-  <!-- Slide 1: Welcome -->
-  <div id="welcomeContainer">
+  <!-- Welcome Slide -->
+  <div id="welcomeSlide" class="slide" style="display:block;">
     <h2>Welcome!</h2>
     <button id="welcomeNextBtn">Next</button>
   </div>
-
-  <!-- Slide 2: Instructions -->
-  <div id="instructionsContainer">
-    <p>In this study, you will be hearing some AI-generated voices reading a passage. After listening, you'll answer a question about the voice. You will hear 14 voices total.</p>
-    <button id="startBtn">Click to Begin</button>
+  <!-- Intro Instructions -->
+  <div id="instructionsSlide1" class="slide">
+    <p>This study is about exploring what influences our perception of social categories in AI-generated speech. You will hear 14 AI-generated voices reading the same passage. After each, you will answer some questions about the voice.</p>
+    <button id="instructions1NextBtn">Next</button>
   </div>
-
+  <!-- Detail Instructions -->
+  <div id="instructionsSlide2" class="slide">
+    <p>Please pay close attention to each speaker and answer each question carefully.</p>
+    <button id="instructions2NextBtn">Begin</button>
+  </div>
   <!-- Attention Check -->
-  <div id="attentionCheck">
+  <div id="attentionSlide" class="slide">
     <audio id="attentionAudio"></audio>
-    <p id="attentionQuestion"></p>
+    <p>What animal did you just hear?</p>
     <button class="attentionBtn">Dog</button>
     <button class="attentionBtn">Cat</button>
     <button class="attentionBtn">Bird</button>
     <button class="attentionBtn">Monkey</button>
   </div>
-
-  <!-- Experiment -->
-  <div id="experimentContainer">
+  <!-- Play Audio -->
+  <div id="experimentSlide" class="slide">
     <audio id="audioPlayer"></audio>
-    <div id="buttonContainer">
+    <div>
       <button id="playBtn">Play Audio</button>
-      <button id="skipBtn" style="display:none;">Skip Audio (Pilot Only)</button>
+      <button id="skipBtn" style="display:none;">Skip (Pilot Only)</button>
     </div>
-    <div id="progressContainer">
-      <div id="progressBar"></div>
-    </div>
-    <div id="question">
-      <label>On a scale from 1 (least certain) to 10 (most certain), how certain are you that the speaker is African American?</label><br>
-      <input type="range" id="raceSlider" min="1" max="10" value="5">
-      <span id="sliderValue">5</span><br>
-      <button id="continueBtn">Continue to Next Voice</button>
-    </div>
+    <div id="progressContainer"><div id="progressBar"></div></div>
   </div>
-
-  <!-- Conclusion Screen -->
-  <div id="conclusionScreen">
-    <h2>Your responses have been recorded.</h2>
-    <p>Thank you for your participation in this study! You may now exit out.</p>
+  <!-- Ethnicity -->
+  <div id="ethnicitySlide" class="slide">
+    <p>What is the ethnicity of the voice?</p>
+    <div id="choiceContainer">
+      <label><input type="radio" name="ethnicity" value="White American"> White American</label><br>
+      <label><input type="radio" name="ethnicity" value="African American"> African American</label><br>
+      <label><input type="radio" name="ethnicity" value="Asian American"> Asian American</label><br>
+      <label><input type="radio" name="ethnicity" value="Mexican American"> Mexican American</label>
+    </div>
+    <button id="ethnicityNextBtn">Next</button>
   </div>
-
+  <!-- Certainty Ethnicity -->
+  <div id="certaintySlide" class="slide">
+    <p>On a scale of 1 (least certain) to 10 (most certain), how certain are you of your previous answer?</p>
+    <div id="sliderWrapper">
+      <input type="range" id="certaintySlider" min="1" max="10" step="0.5" value="5.5">
+      <div id="certaintySliderValue" class="sliderValue">5.5</div>
+    </div>
+    <button id="certaintyContinueBtn">Next</button>
+  </div>
+  <!-- Gender -->
+  <div id="genderSlide" class="slide">
+    <p>What gender is this speaker?</p>
+    <div id="choiceContainer">
+      <label><input type="radio" name="gender" value="Male"> Male</label><br>
+      <label><input type="radio" name="gender" value="Female"> Female</label><br>
+      <label><input type="radio" name="gender" value="Not sure"> Not sure</label>
+    </div>
+    <button id="genderNextBtn">Next</button>
+  </div>
+  <!-- Certainty Gender -->
+  <div id="genderCertaintySlide" class="slide">
+    <p>On a scale of 1 (least certain) to 10 (most certain), how certain are you?</p>
+    <div id="sliderWrapper">
+      <input type="range" id="genderCertaintySlider" min="1" max="10" step="0.5" value="5.5">
+      <div id="genderCertaintySliderValue" class="sliderValue">5.5</div>
+    </div>
+    <button id="genderContinueBtn">Next</button>
+  </div>
+  <!-- Energy -->
+  <div id="energySlide" class="slide">
+    <p>How energetic did this speaker sound?</p>
+    <div id="choiceContainer">
+      <label><input type="radio" name="energy" value="Very energetic"> Very energetic</label><br>
+      <label><input type="radio" name="energy" value="Somewhat energetic"> Somewhat energetic</label><br>
+      <label><input type="radio" name="energy" value="Not energetic at all"> Not energetic at all</label>
+    </div>
+    <button id="energyNextBtn">Next</button>
+  </div>
+  <!-- Certainty Energy -->
+  <div id="energyCertaintySlide" class="slide">
+    <p>On a scale of 1 (least certain) to 10 (most certain), how certain are you?</p>
+    <div id="sliderWrapper">
+      <input type="range" id="energyCertaintySlider" min="1" max="10" step="0.5" value="5.5">
+      <div id="energyCertaintySliderValue" class="sliderValue">5.5</div>
+    </div>
+    <button id="energyContinueBtn">Next</button>
+  </div>
+  <!-- Age -->
+  <div id="ageSlide" class="slide">
+    <p>About how old did this speaker sound?</p>
+    <div id="choiceContainer">
+      <label><input type="radio" name="age" value="0-20"> 0-20</label><br>
+      <label><input type="radio" name="age" value="20-40"> 20-40</label><br>
+      <label><input type="radio" name="age" value="40-60"> 40-60</label><br>
+      <label><input type="radio" name="age" value="60-80"> 60-80</label>
+    </div>
+    <button id="ageNextBtn">Next</button>
+  </div>
+  <!-- Certainty Age -->
+  <div id="ageCertaintySlide" class="slide">
+    <p>On a scale of 1 (least certain) to 10 (most certain), how certain are you?</p>
+    <div id="sliderWrapper">
+      <input type="range" id="ageCertaintySlider" min="1" max="10" step="0.5" value="5.5">
+      <div id="ageCertaintySliderValue" class="sliderValue">5.5</div>
+    </div>
+    <button id="ageContinueBtn">Continue</button>
+  </div>
+  <!-- Conclusion -->
+  <div id="conclusionSlide" class="slide">
+    <h2>All done!</h2>
+    <p>Thanks for participating.</p>
+  </div>
 <script>
-  const mainAudioFiles = [
-    "BM1.wav","BM2.wav","BM3.wav","BM4.wav","BM5.wav","BM6.wav","BM7.wav",
-    "BF1.wav","BF2.wav","BF3.wav","BF4.wav","BF5.wav","BF6.wav","BF7.wav",
-    "WM1.wav","WM2.wav","WM3.wav","WM4.wav","WM5.wav","WM6.wav","WM7.wav",
-    "WF1.wav","WF2.wav","WF3.wav","WF4.wav","WF5.wav","WF6.wav","WF7.wav"
-  ];
-
-  const shuffledAudio = mainAudioFiles.sort(() => Math.random()-0.5).slice(0,14);
-  
-  const trialOrder = [
-    "attention_check/cat.wav",
-    ...shuffledAudio,
-    "attention_check/dog.wav"
-  ];
-
+  const mainAudioFiles = [...Array(7).keys()].flatMap(i => [`BM${i+1}.wav`,`BF${i+1}.wav`,`WM${i+1}.wav`,`WF${i+1}.wav`]);
+  const shuffled = mainAudioFiles.sort(() => 0.5 - Math.random()).slice(0,14);
+  const trialOrder = ["attention_check/cat.wav", ...shuffled, "attention_check/dog.wav"];
   let currentTrial = 0;
+  let responses = {};
+
+  function showSlide(id) {
+    document.querySelectorAll('.slide').forEach(s => s.style.display='none');
+    document.getElementById(id).style.display='block';
+  }
+
+  document.getElementById('welcomeNextBtn').onclick = () => showSlide('instructionsSlide1');
+  document.getElementById('instructions1NextBtn').onclick = () => showSlide('instructionsSlide2');
+  document.getElementById('instructions2NextBtn').onclick = () => runTrial();
+  document.querySelectorAll('.attentionBtn').forEach(btn => btn.onclick = () => { currentTrial++; runTrial(); });
 
   const audioPlayer = document.getElementById('audioPlayer');
   const playBtn = document.getElementById('playBtn');
   const skipBtn = document.getElementById('skipBtn');
-  const question = document.getElementById('question');
-  const continueBtn = document.getElementById('continueBtn');
-  const raceSlider = document.getElementById('raceSlider');
-  const sliderValue = document.getElementById('sliderValue');
   const progressBar = document.getElementById('progressBar');
-  const welcomeContainer = document.getElementById('welcomeContainer');
-  const instructionsContainer = document.getElementById('instructionsContainer');
-  const experimentContainer = document.getElementById('experimentContainer');
-  const welcomeNextBtn = document.getElementById('welcomeNextBtn');
-  const startBtn = document.getElementById('startBtn');
-  const attentionCheck = document.getElementById('attentionCheck');
-  const attentionAudio = document.getElementById('attentionAudio');
-  const attentionQuestion = document.getElementById('attentionQuestion');
-  const attentionButtons = document.querySelectorAll('.attentionBtn');
-  const conclusionScreen = document.getElementById('conclusionScreen');
   let progressInterval;
-
-  welcomeNextBtn.onclick = () => {
-    welcomeContainer.style.display = 'none';
-    instructionsContainer.style.display = 'block';
-  };
-
-  startBtn.onclick = () => {
-    instructionsContainer.style.display = 'none';
-    runTrial();
-  };
+  playBtn.onclick = () => { audioPlayer.play(); playBtn.style.display='none'; skipBtn.style.display='inline'; progressInterval = setInterval(() => progressBar.style.width = audioPlayer.currentTime/audioPlayer.duration*100+'%',200); };
+  skipBtn.onclick = () => { audioPlayer.pause(); clearInterval(progressInterval); progressBar.style.width='0%'; showSlide('ethnicitySlide'); };
+  audioPlayer.onended = () => { clearInterval(progressInterval); progressBar.style.width = '100%'; showSlide('ethnicitySlide'); };
 
   function runTrial(){
-    if (currentTrial >= trialOrder.length) {
-      showConclusion();
-    } else if (trialOrder[currentTrial].includes("attention_check")){
-      runAttentionCheck();
-    } else {
-      experimentContainer.style.display = 'block';
-      loadCurrentAudio();
-    }
+    if(currentTrial>=trialOrder.length) return showSlide('conclusionSlide');
+    const file=trialOrder[currentTrial];
+    if(file.includes('attention_check')){ showSlide('attentionSlide'); document.getElementById('attentionAudio').src=file; document.getElementById('attentionAudio').play(); }
+    else{ showSlide('experimentSlide'); audioPlayer.src='../data/soundfiles/'+file; playBtn.style.display='inline'; skipBtn.style.display='none'; progressBar.style.width='0%'; }
   }
 
-  function runAttentionCheck(){
-    attentionCheck.style.display = 'block';
-    experimentContainer.style.display = 'none';
-    attentionAudio.src = trialOrder[currentTrial];
-    attentionAudio.play();
-    attentionQuestion.textContent = "What animal did you just hear?";
-    attentionButtons.forEach(btn => btn.onclick = () => {
-      currentTrial++;
-      attentionCheck.style.display = 'none';
-      runTrial();
-    });
+  function setupMC(btnId, respKey, nextSlide){
+    document.getElementById(btnId).onclick = () => {
+      const name = btnId.replace('NextBtn','');
+      const sel = document.querySelector(`input[name="${name}"]:checked`);
+      if(!sel) return alert('Please make a selection.');
+      responses[respKey]=sel.value;
+      showSlide(nextSlide);
+    };
   }
+  setupMC('ethnicityNextBtn','ethnicity','certaintySlide');
+  setupMC('genderNextBtn','gender','genderCertaintySlide');
+  setupMC('energyNextBtn','energy','energyCertaintySlide');
+  setupMC('ageNextBtn','age','ageCertaintySlide');
 
-  function loadCurrentAudio(){
-    audioPlayer.src = '../data/soundfiles/' + trialOrder[currentTrial];
-    playBtn.style.display='inline';
-    skipBtn.style.display='none';
-    progressBar.style.width='0%';
-    question.style.display='none';
-    raceSlider.value=5;
-    sliderValue.textContent=raceSlider.value;
+  function setupCertainty(sliderId, displayId, btnId, nextSlide){
+    document.getElementById(sliderId).oninput = e => { document.getElementById(displayId).textContent = e.target.value; };
+    document.getElementById(btnId).onclick = () => {
+      responses[sliderId.replace('CertaintySlider','')+'Certainty'] = document.getElementById(sliderId).value;
+      if(nextSlide==='experimentSlide'){ console.log({...responses,file:trialOrder[currentTrial]}); responses={}; currentTrial++; }
+      showSlide(nextSlide);
+    };
   }
-
-  playBtn.onclick=()=>{
-    audioPlayer.play();
-    playBtn.style.display='none';
-    skipBtn.style.display='inline';
-    progressInterval=setInterval(()=>{
-      progressBar.style.width=((audioPlayer.currentTime/audioPlayer.duration)*100)+'%';
-    },200);
-  };
-
-  skipBtn.onclick=()=>{
-    audioPlayer.pause();
-    audioPlayer.currentTime=0;
-    clearInterval(progressInterval);
-    progressBar.style.width='0%';
-    question.style.display='block';
-    skipBtn.style.display='none';
-  };
-
-  audioPlayer.onended=()=>{
-    clearInterval(progressInterval);
-    progressBar.style.width='100%';
-    question.style.display='block';
-    skipBtn.style.display='none';
-  };
-
-  raceSlider.oninput=()=>{
-    sliderValue.textContent=raceSlider.value;
-  };
-
-  continueBtn.onclick=()=>{
-    console.log(`Rating:${raceSlider.value}, File:${trialOrder[currentTrial]}`);
-    currentTrial++;
-    experimentContainer.style.display='none';
-    runTrial();
-  };
-
-  function showConclusion(){
-    conclusionScreen.style.display='block';
-    experimentContainer.style.display='none';
-    attentionCheck.style.display='none';
-  }
+  setupCertainty('certaintySlider','certaintySliderValue','certaintyContinueBtn','genderSlide');
+  setupCertainty('genderCertaintySlider','genderCertaintySliderValue','genderContinueBtn','energySlide');
+  setupCertainty('energyCertaintySlider','energyCertaintySliderValue','energyContinueBtn','ageSlide');
+  setupCertainty('ageCertaintySlider','ageCertaintySliderValue','ageContinueBtn','experimentSlide');
 </script>
-
 </body>
 </html>
