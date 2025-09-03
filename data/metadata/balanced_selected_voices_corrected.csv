@@ -1,29 +1,33 @@
-id,voice_code,voice_id,race,gender
-1,BF1,natasha,b,f
-2,BF2,sassy aerisita,b,f
-3,BF3,kayla,b,f
-4,BF4,nia davis,b,f
-5,BF5,lisa,b,f
-6,BF6,dakota,b,f
-7,BF7,naomi,b,f
-8,BM1,marques,b,m
-9,BM2,attank,b,m
-10,BM3,lamar lincoln,b,m
-11,BM4,sevan bomar,b,m
-12,BM5,young jamal,b,m
-13,BM6,jamal,b,m
-14,BM7,hobbs,b,m
-15,WF1,domi,w,f
-16,WF2,joanne,w,f
-17,WF3,ivy,w,f
-18,WF4,sally,w,f
-19,WF5,cassidy,w,f
-20,WF6,annabell,w,f
-21,WF7,alloy,w,f
-22,WM1,Rob,w,m
-23,WM2,alex,w,m
-24,WM3,onyx,w,m
-25,WM4,jeff,w,m
-26,WM5,drew,w,m
-27,WM6,mark,w,m
-28,WM7,harrison,w,m
+voice_id,race,gender
+Natasha,b,F
+Sassy Aerisita,b,F
+Kayla,b,F
+Raven,b,F
+Lisa,b,F
+Niki,b,F
+Naomi,b,F
+Alicia,b,F
+Hobbs,b,M
+Berto Jolliffe,b,M
+Marques,b,M
+Rahmir Odessa,b,M
+Young Jamal,b,M
+Sevan Bomar,b,M
+Lamar Lincoln,b,M
+Okole,b,M
+Jessica Anne Bogart,w,F
+Bella,w,F
+Annabell,w,F
+Halley,w,F
+Nova,w,F
+Sally,w,F
+Alloy,w,F
+Emily,w,F
+Adam,w,M
+Domi,w,M
+Arnold,w,M
+Cody Whatmore,w,M
+Jeff,w,M
+Onyx,w,M
+Antoni,w,M
+Josh,w,M
