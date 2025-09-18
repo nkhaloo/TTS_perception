@@ -11,13 +11,14 @@ voices_clean <- voices %>%
   filter(excluded != 'y' | is.na(excluded))
 
 
-# Sample 8 from each group: w,M; w,F; b,M; b,F
+# Sample 8 from each group:w,M; w,F; b,M; b,F
 voices_sampled <- voices_clean %>%
   filter(race %in% c("w", "b"), gender %in% c("M", "F")) %>%
   group_by(race, gender) %>%
   slice_sample(n = 8) %>%
-  ungroup() %>%
-  select(-excluded)
+  arrange(race, gender) %>% 
+  mutate(code = paste0(toupper(race), gender, row_number())) %>%
+  ungroup()
 
 # 
 # Save explicitly the final balanced dataset
