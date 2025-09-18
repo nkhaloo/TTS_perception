@@ -46,7 +46,6 @@
 
   <script>
     const CONFIG = {
-      // absolute base URL to GitHub Pages repo
       assetsBase: 'https://nkhaloo.github.io/AAE_AI/data/soundfiles',
       stimuli: ['central', 'fronting', 'mono', 'raising'],
       suffix: '.wav',
@@ -149,7 +148,7 @@
         html += `<tr><td>${q}</td>`;
         for (let v = CONFIG.scaleMin; v <= CONFIG.scaleMax; v++) {
           const id = `q${i}_${v}`;
-          html += `<td><input type=\"radio\" name=\"q${i}\" value=\"${v}\" id=\"${id}\"></td>`;
+          html += `<td><input type="radio" name="q${i}" value="${v}" id="${id}"></td>`;
         }
         html += '</tr>';
       });
@@ -208,7 +207,6 @@
       player.src = t.url;
       console.log("Trial audio loaded:", player.src);
       nextBtn.disabled = true;
-      renderQuestions(CONFIG.questions[State.currentBlock]);
     }
 
     function handleNext() {
