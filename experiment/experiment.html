@@ -16,19 +16,37 @@
     table { width: 100%; border-collapse: collapse; margin-top: 16px; }
     th, td { padding: 8px; text-align: center; }
     td:first-child { text-align: left; }
-    input[type="radio"] { margin: 0 auto; display: block; }
+    input[type="radio"] { margin: 0 6px 0 0; }
+    .question-block { margin: 20px 0; }
+    .options-vertical label { display: block; margin: 4px 0; }
+    .options-horizontal { display: flex; justify-content: space-between; margin-top: 8px; }
+    .options-horizontal label { flex: 1; text-align: center; }
+    textarea { width: 100%; height: 100px; margin-top: 8px; }
   </style>
 </head>
 <body>
-  <div class="card" id="screen-intro">
-    <h1>Audio Judgment Study</h1>
-    <p>You will hear short recordings from different speakers and answer a quick question after each one. There are two blocks: Personality and Race. The assignment is randomized per participant.</p>
-    <button class="btn btn-primary" id="startBtn">Start Experiment</button>
+  <!-- Consent -->
+  <div class="card" id="screen-consent">
+    <h1>Intro and Consent</h1>
+    <p>Thank you so much for participating in our study!</p>
+    <p>
+      Currently, we are working on testing A.I. generated voices for new spoken language models.
+      We are testing voices that were trained on multiple dialects, voices, and genders, so your input about
+      these traits is important for the continued development of voice assistants.
+    </p>
+    <p>Please be as honest as possible in your feedback of these voices.</p>
+    <p>
+      Before starting, please read the <a href="#" target="_blank">Informed Consent Form</a>, 
+      and then check the box below once you are done reading.
+    </p>
+    <label><input type="checkbox" id="consentCheck"> I consent to participate</label>
+    <br><br>
+    <button class="btn btn-primary" id="consentBtn" disabled>Continue</button>
   </div>
 
+  <!-- Trial Block -->
   <div class="card hidden" id="screen-block">
     <h1 id="blockTitle">Block</h1>
-    <div id="trialCounter">Trial 1 / 64</div>
     <div class="progress"><div id="progressBar"></div></div>
     <p>Please press Play to listen to the audio:</p>
     <audio id="player" preload="auto" controls controlsList="nodownload noplaybackrate"></audio>
@@ -38,10 +56,34 @@
     </div>
   </div>
 
+  <!-- Attention Check -->
+  <div class="card hidden" id="screen-attncheck">
+    <h1>Attention Check</h1>
+    <p>How many 2’s are there in this sequence: <strong>21332262</strong>?</p>
+    <input type="text" id="attnResponse" placeholder="Type your answer here" style="width:200px; padding:6px;">
+    <br><br>
+    <button class="btn btn-primary" id="attnNextBtn">Continue</button>
+  </div>
+
+  <!-- Demographics -->
+  <div class="card hidden" id="screen-demographics">
+    <h1>Demographics Survey</h1>
+    <div id="demoQuestions"></div>
+    <button class="btn btn-primary" id="demoNextBtn">Next</button>
+  </div>
+
+  <!-- Feedback -->
+  <div class="card hidden" id="screen-feedback">
+    <h1>Final Feedback</h1>
+    <p>Please describe any thoughts or feedback you have about the voices overall.</p>
+    <textarea id="feedbackText"></textarea>
+    <button class="btn btn-primary" id="feedbackNextBtn">Submit</button>
+  </div>
+
+  <!-- Finish -->
   <div class="card hidden" id="screen-finish">
     <h1>All Done!</h1>
-    <p>Thank you for participating. Download your responses below:</p>
-    <button class="btn btn-primary" id="downloadBtn">Download CSV</button>
+    <p>Thank you for participating.</p>
   </div>
 
   <script>
@@ -59,7 +101,10 @@
           "How pleasant does this speaker sound?"
         ],
         Race: [
-          "Placeholder race question (1–7)"
+          { type: "radio-list", text: "What dialect region does the AI voice sound like?", options: ["Midwestern U.S.", "Northeastern U.S.", "Northwestern U.S.", "Southeastern U.S.", "Southwestern U.S.", "Non-American"] },
+          { type: "radio-list", text: "What race does the AI voice sound like?", options: ["Asian", "Black", "Latino/Hispanic", "White"] },
+          { type: "radio-list", text: "How old does the AI voice sound?", options: ["18–24", "25–34", "35–44", "45–54", "55+"] },
+          { type: "likert", text: "How feminine or masculine does the AI voice sound?", scaleMin: 1, scaleMax: 7, labels: {1:"Most feminine",4:"Androgynous",7:"Most masculine"} }
         ]
       },
       bins: ['BF', 'BM', 'WF', 'WM'],
@@ -79,16 +124,12 @@
     function buildAllSpeakers() {
       const speakers = [];
       for (const bin of CONFIG.bins) {
-        for (let n = 1; n <= CONFIG.numsPerBin; n++) {
-          speakers.push(`${bin}${n}`);
-        }
+        for (let n = 1; n <= CONFIG.numsPerBin; n++) speakers.push(`${bin}${n}`);
       }
       return speakers;
     }
 
-    function speakerPrefixToBin(prefix) {
-      return prefix.replace(/\d+$/, '');
-    }
+    function speakerPrefixToBin(prefix) { return prefix.replace(/\d+$/, ''); }
 
     function balancedSplit(speakers) {
       const groupsByBin = Object.fromEntries(CONFIG.bins.map(b => [b, []]));
@@ -106,89 +147,48 @@
       const trials = [];
       for (const spk of groupSpeakers) {
         for (const stim of CONFIG.stimuli) {
-          trials.push({
-            block: blockLabel,
-            speaker: spk,
-            bin: speakerPrefixToBin(spk),
-            stimulus: stim,
-            url: `${CONFIG.assetsBase}/${stim}/${spk}_${stim}${CONFIG.suffix}`
-          });
+          trials.push({ block: blockLabel, speaker: spk, bin: speakerPrefixToBin(spk), stimulus: stim, url: `${CONFIG.assetsBase}/${stim}/${spk}_${stim}${CONFIG.suffix}` });
         }
       }
       return shuffle(trials);
     }
 
-    function toCSV(rows) {
-      const esc = v => '"' + String(v).replace(/"/g, '""') + '"';
-      const headers = Object.keys(rows[0] || {});
-      return [headers.join(','), ...rows.map(r => headers.map(h => esc(r[h] ?? '')).join(','))].join('\n');
-    }
+    const State = { blocks: {}, order: [], currentBlock: null, trialIndex: 0 };
 
-    const State = { blocks: {}, order: [], currentBlock: null, trialIndex: 0, data: [], startedAt: null };
-
-    const intro = document.getElementById('screen-intro');
+    const consent = document.getElementById('screen-consent');
     const block = document.getElementById('screen-block');
+    const attn = document.getElementById('screen-attncheck');
+    const demo = document.getElementById('screen-demographics');
+    const feedback = document.getElementById('screen-feedback');
     const finish = document.getElementById('screen-finish');
     const blockTitle = document.getElementById('blockTitle');
-    const trialCounter = document.getElementById('trialCounter');
     const progressBar = document.getElementById('progressBar');
     const player = document.getElementById('player');
     const questionsContainer = document.getElementById('questionsContainer');
     const nextBtn = document.getElementById('nextBtn');
-    const downloadBtn = document.getElementById('downloadBtn');
 
-    function renderQuestions(questions) {
-      let html = '<table><tr><th></th>';
-      for (let v = CONFIG.scaleMin; v <= CONFIG.scaleMax; v++) {
-        html += `<th>${v}</th>`;
-      }
-      html += '</tr>';
-
-      questions.forEach((q, i) => {
-        html += `<tr><td>${q}</td>`;
-        for (let v = CONFIG.scaleMin; v <= CONFIG.scaleMax; v++) {
-          const id = `q${i}_${v}`;
-          html += `<td><input type="radio" name="q${i}" value="${v}" id="${id}"></td>`;
-        }
-        html += '</tr>';
-      });
-      html += '</table>';
-      questionsContainer.innerHTML = html;
-
-      document.querySelectorAll('input[type=radio]').forEach(inp => {
-        inp.addEventListener('change', () => {
-          nextBtn.disabled = !allAnswered(questions.length);
-        });
-      });
-    }
-
-    function allAnswered(numQs) {
-      for (let i = 0; i < numQs; i++) {
-        if (!document.querySelector(`input[name="q${i}"]:checked`)) return false;
-      }
-      return true;
-    }
-
-    document.getElementById('startBtn').addEventListener('click', startExperiment);
+    document.getElementById('consentCheck').addEventListener('change', e => {
+      document.getElementById('consentBtn').disabled = !e.target.checked;
+    });
+    document.getElementById('consentBtn').addEventListener('click', startExperiment);
 
     function startExperiment() {
       const speakers = buildAllSpeakers();
       const {A, B} = balancedSplit(speakers);
-      const mappingFlip = Math.random() < 0.5;
-      const map = mappingFlip ? { Personality: 'A', Race: 'B' } : { Personality: 'B', Race: 'A' };
-      State.order = Math.random() < 0.5 ? ['Personality','Race'] : ['Race','Personality'];
+      const map = { Personality: 'A', Race: 'B' };
+      State.order = ['Personality','Race'];
       const groupFor = blockName => (map[blockName] === 'A' ? A : B);
       State.blocks = {
         Personality: buildBlockTrials(groupFor('Personality'), 'Personality'),
         Race: buildBlockTrials(groupFor('Race'), 'Race')
       };
-      intro.classList.add('hidden');
+      consent.classList.add('hidden');
       renderBlock(State.order[0]);
     }
 
     function renderBlock(blockName) {
-      State.currentBlock = blockName; State.trialIndex = 0; State.startedAt = performance.now();
-      renderQuestions(CONFIG.questions[blockName]);
+      State.currentBlock = blockName; State.trialIndex = 0;
+      renderQuestions(blockName);
       blockTitle.textContent = `${blockName} Block`;
       block.classList.remove('hidden');
       updateTrialUI();
@@ -198,54 +198,100 @@
     function currentTrials() { return State.blocks[State.currentBlock]; }
     function currentTrial() { return currentTrials()[State.trialIndex]; }
 
+    function renderQuestions(blockName) {
+      if (blockName === "Personality") {
+        let html = '<table><tr><th></th>';
+        for (let v = CONFIG.scaleMin; v <= CONFIG.scaleMax; v++) html += `<th>${v}</th>`;
+        html += '</tr>';
+        CONFIG.questions.Personality.forEach((q, i) => {
+          html += `<tr><td>${q}</td>`;
+          for (let v = CONFIG.scaleMin; v <= CONFIG.scaleMax; v++) {
+            const id = `q${i}_${v}`;
+            html += `<td><input type="radio" name="q${i}" value="${v}" id="${id}"></td>`;
+          }
+          html += '</tr>';
+        });
+        html += '</table>';
+        questionsContainer.innerHTML = html;
+      } else if (blockName === "Race") {
+        let html = '';
+        CONFIG.questions.Race.forEach((q, i) => {
+          if (q.type === "radio-list") {
+            html += `<div class="question-block"><p>${q.text}</p><div class="options-vertical">`;
+            q.options.forEach((opt,j) => {
+              const id = `race${i}_${j}`;
+              html += `<label><input type="radio" name="race${i}" value="${opt}" id="${id}"> ${opt}</label>`;
+            });
+            html += '</div></div>';
+          } else if (q.type === "likert") {
+            html += `<div class="question-block"><p>${q.text}</p><div class="options-horizontal">`;
+            for (let v = q.scaleMin; v <= q.scaleMax; v++) {
+              const label = q.labels && q.labels[v] ? q.labels[v] : v;
+              const id = `race${i}_${v}`;
+              html += `<label><input type="radio" name="race${i}" value="${v}" id="${id}"><br>${label}</label>`;
+            }
+            html += '</div></div>';
+          }
+        });
+        questionsContainer.innerHTML = html;
+      }
+      document.querySelectorAll('input[type=radio]').forEach(inp => inp.addEventListener('change', () => nextBtn.disabled = !allAnswered(blockName)));
+    }
+
+    function allAnswered(blockName) {
+      if (blockName === "Personality") {
+        return CONFIG.questions.Personality.every((q,i) => document.querySelector(`input[name="q${i}"]:checked`));
+      } else if (blockName === "Race") {
+        return CONFIG.questions.Race.every((q,i) => document.querySelector(`input[name="race${i}"]:checked`));
+      }
+      return false;
+    }
+
+    function clearAnswers() {
+      document.querySelectorAll('input[type="radio"]').forEach(inp => inp.checked = false);
+      nextBtn.disabled = true;
+    }
+
     function updateTrialUI() {
       const trials = currentTrials();
       const t = currentTrial();
       const total = trials.length;
-      trialCounter.textContent = `Trial ${State.trialIndex+1} / ${total}`;
       progressBar.style.width = `${((State.trialIndex)/total)*100}%`;
       player.src = t.url;
-      console.log("Trial audio loaded:", player.src);
-      nextBtn.disabled = true;
+      clearAnswers();
+
+      // disable until audio ends
+      document.querySelectorAll('#questionsContainer input').forEach(inp => inp.disabled = true);
+      player.onended = () => {
+        document.querySelectorAll('#questionsContainer input').forEach(inp => inp.disabled = false);
+      };
     }
 
     function handleNext() {
-      const t = currentTrial();
-      const rt = Math.round(performance.now() - State.startedAt);
-      const responses = {};
-      CONFIG.questions[State.currentBlock].forEach((q, i) => {
-        const sel = document.querySelector(`input[name="q${i}"]:checked`);
-        responses[q] = sel ? sel.value : '';
-      });
-      State.data.push({
-        block: t.block,
-        trial_index: State.trialIndex+1,
-        speaker: t.speaker,
-        bin: t.bin,
-        stimulus: t.stimulus,
-        audio_url: t.url,
-        ...responses,
-        rt_ms: rt,
-        timestamp: new Date().toISOString()
-      });
-      State.trialIndex++; State.startedAt = performance.now();
+      State.trialIndex++;
       const trials = currentTrials();
       if (State.trialIndex < trials.length) updateTrialUI();
       else {
         const idx = State.order.indexOf(State.currentBlock);
-        if (idx === 0) renderBlock(State.order[1]);
-        else { block.classList.add('hidden'); finish.classList.remove('hidden'); }
+        if (idx === 0) { block.classList.add('hidden'); attn.classList.remove('hidden'); }
+        else { block.classList.add('hidden'); renderDemographics(); }
       }
     }
 
-    downloadBtn.addEventListener('click', () => {
-      if (!State.data.length) return;
-      const csv = toCSV(State.data);
-      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url; a.download = `responses.csv`;
-      a.click(); URL.revokeObjectURL(url);
+    document.getElementById('attnNextBtn').addEventListener('click', () => {
+      attn.classList.add('hidden');
+      renderBlock('Race');
+    });
+
+    function renderDemographics() {
+      demo.classList.remove('hidden');
+      document.getElementById('demoQuestions').innerHTML = "<p>[Demographic questions go here]</p>";
+      document.getElementById('demoNextBtn').onclick = () => { demo.classList.add('hidden'); feedback.classList.remove('hidden'); };
+    }
+
+    document.getElementById('feedbackNextBtn').addEventListener('click', () => {
+      feedback.classList.add('hidden');
+      finish.classList.remove('hidden');
     });
   </script>
 </body>
