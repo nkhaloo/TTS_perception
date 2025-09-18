@@ -6,17 +6,17 @@
   <title>Racial Judgment Experiment</title>
   <style>
     body { font-family: sans-serif; background: #f5f5f5; margin: 0; padding: 20px; }
-    .card { background: white; border-radius: 8px; padding: 20px; max-width: 700px; margin: 0 auto; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+    .card { background: white; border-radius: 8px; padding: 20px; max-width: 900px; margin: 0 auto; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
     h1 { font-size: 24px; margin-top: 0; }
     .btn { padding: 10px 16px; border: none; border-radius: 6px; cursor: pointer; }
     .btn-primary { background: #007acc; color: white; }
     .hidden { display: none; }
     .progress { height: 8px; background: #eee; border-radius: 4px; margin: 10px 0; overflow: hidden; }
     .progress > div { height: 100%; background: #007acc; width: 0; }
-    .scale { display: flex; gap: 6px; margin-top: 10px; }
-    .scale label { flex: 1; text-align: center; padding: 6px 0; border: 1px solid #ccc; border-radius: 4px; cursor: pointer; }
-    .scale input { display: none; }
-    .scale input:checked + label { background: #007acc; color: white; border-color: #007acc; }
+    table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+    th, td { padding: 8px; text-align: center; }
+    td:first-child { text-align: left; }
+    input[type="radio"] { margin: 0 auto; display: block; }
   </style>
 </head>
 <body>
@@ -31,9 +31,8 @@
     <div id="trialCounter">Trial 1 / 64</div>
     <div class="progress"><div id="progressBar"></div></div>
     <p>Please press Play to listen to the audio:</p>
-    <audio id="player" preload="auto" controls></audio>
-    <div id="questionText" style="margin-top:12px;">Placeholder question goes here.</div>
-    <div class="scale" id="scale"></div>
+    <audio id="player" preload="auto" controls controlsList="nodownload noplaybackrate"></audio>
+    <div id="questionsContainer"></div>
     <div style="margin-top:12px;">
       <button class="btn btn-primary" id="nextBtn" disabled>Next</button>
     </div>
@@ -51,8 +50,17 @@
       stimuli: ['central', 'fronting', 'mono', 'raising'],
       suffix: '.wav',
       questions: {
-        Personality: 'Placeholder personality question (1–7)',
-        Race: 'Placeholder race question (1–7)'
+        Personality: [
+          "How friendly does this speaker sound?",
+          "How professional does this speaker sound?",
+          "How funny does this speaker sound?",
+          "How competent does this speaker sound?",
+          "How trustworthy does this speaker sound?",
+          "How pleasant does this speaker sound?"
+        ],
+        Race: [
+          "Placeholder race question (1–7)"
+        ]
       },
       bins: ['BF', 'BM', 'WF', 'WM'],
       numsPerBin: 8,
@@ -103,7 +111,6 @@
             speaker: spk,
             bin: speakerPrefixToBin(spk),
             stimulus: stim,
-            // Use the same path style as the old working experiment
             url: `${CONFIG.assetsBase}/${stim}/${spk}_${stim}${CONFIG.suffix}`
           });
         }
@@ -126,31 +133,40 @@
     const trialCounter = document.getElementById('trialCounter');
     const progressBar = document.getElementById('progressBar');
     const player = document.getElementById('player');
-    const questionText = document.getElementById('questionText');
-    const scaleDiv = document.getElementById('scale');
+    const questionsContainer = document.getElementById('questionsContainer');
     const nextBtn = document.getElementById('nextBtn');
     const downloadBtn = document.getElementById('downloadBtn');
 
-    function renderScale(min, max, onChange) {
-      scaleDiv.innerHTML = '';
-      for (let v = min; v <= max; v++) {
-        const input = document.createElement('input');
-        input.type = 'radio'; input.name = 'answer'; input.id = `ans_${v}`; input.value = String(v);
-        const label = document.createElement('label');
-        label.setAttribute('for', input.id); label.textContent = String(v);
-        input.addEventListener('change', onChange);
-        scaleDiv.appendChild(input); scaleDiv.appendChild(label);
+    function renderQuestions(questions) {
+      let html = '<table><tr><th></th>';
+      for (let v = CONFIG.scaleMin; v <= CONFIG.scaleMax; v++) {
+        html += `<th>${v}</th>`;
       }
+      html += '</tr>';
+
+      questions.forEach((q, i) => {
+        html += `<tr><td>${q}</td>`;
+        for (let v = CONFIG.scaleMin; v <= CONFIG.scaleMax; v++) {
+          const id = `q${i}_${v}`;
+          html += `<td><input type=\"radio\" name=\"q${i}\" value=\"${v}\" id=\"${id}\"></td>`;
+        }
+        html += '</tr>';
+      });
+      html += '</table>';
+      questionsContainer.innerHTML = html;
+
+      document.querySelectorAll('input[type=radio]').forEach(inp => {
+        inp.addEventListener('change', () => {
+          nextBtn.disabled = !allAnswered(questions.length);
+        });
+      });
     }
 
-    function getSelectedAnswer() {
-      const el = document.querySelector('input[name="answer"]:checked');
-      return el ? Number(el.value) : null;
-    }
-
-    function clearAnswer() {
-      const el = document.querySelector('input[name="answer"]:checked');
-      if (el) el.checked = false;
+    function allAnswered(numQs) {
+      for (let i = 0; i < numQs; i++) {
+        if (!document.querySelector(`input[name="q${i}"]:checked`)) return false;
+      }
+      return true;
     }
 
     document.getElementById('startBtn').addEventListener('click', startExperiment);
@@ -164,7 +180,7 @@
       const groupFor = blockName => (map[blockName] === 'A' ? A : B);
       State.blocks = {
         Personality: buildBlockTrials(groupFor('Personality'), 'Personality'),
-        Race: buildBlockTrials(groupFor('Race'), 'Race'),
+        Race: buildBlockTrials(groupFor('Race'), 'Race')
       };
       intro.classList.add('hidden');
       renderBlock(State.order[0]);
@@ -172,8 +188,7 @@
 
     function renderBlock(blockName) {
       State.currentBlock = blockName; State.trialIndex = 0; State.startedAt = performance.now();
-      questionText.textContent = CONFIG.questions[blockName];
-      renderScale(CONFIG.scaleMin, CONFIG.scaleMax, () => { nextBtn.disabled = getSelectedAnswer() == null; });
+      renderQuestions(CONFIG.questions[blockName]);
       blockTitle.textContent = `${blockName} Block`;
       block.classList.remove('hidden');
       updateTrialUI();
@@ -189,17 +204,20 @@
       const total = trials.length;
       trialCounter.textContent = `Trial ${State.trialIndex+1} / ${total}`;
       progressBar.style.width = `${((State.trialIndex)/total)*100}%`;
-      // Use the same logic as the old working experiment
-      player.src = `../${t.url}`;
+      player.src = t.url;
       console.log("Trial audio loaded:", player.src);
-      nextBtn.disabled = getSelectedAnswer() == null;
-      clearAnswer();
+      nextBtn.disabled = true;
+      renderQuestions(CONFIG.questions[State.currentBlock]);
     }
 
     function handleNext() {
       const t = currentTrial();
       const rt = Math.round(performance.now() - State.startedAt);
-      const answer = getSelectedAnswer();
+      const responses = {};
+      CONFIG.questions[State.currentBlock].forEach((q, i) => {
+        const sel = document.querySelector(`input[name="q${i}"]:checked`);
+        responses[q] = sel ? sel.value : '';
+      });
       State.data.push({
         block: t.block,
         trial_index: State.trialIndex+1,
@@ -207,9 +225,9 @@
         bin: t.bin,
         stimulus: t.stimulus,
         audio_url: t.url,
-        answer,
+        ...responses,
         rt_ms: rt,
-        timestamp: new Date().toISOString(),
+        timestamp: new Date().toISOString()
       });
       State.trialIndex++; State.startedAt = performance.now();
       const trials = currentTrials();
