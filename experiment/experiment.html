@@ -10,55 +10,73 @@
     h1 { font-size: 24px; margin-top: 0; }
     .btn { padding: 10px 16px; border: none; border-radius: 6px; cursor: pointer; }
     .btn-primary { background: #007acc; color: white; }
-    .btn-primary:disabled { background: #a0aec0; color: #e2e8f0; cursor: not-allowed; }  /* 👈 added */
+    .btn-primary:disabled { background: #a0aec0; color: #e2e8f0; cursor: not-allowed; }
     .hidden { display: none; }
     .progress { height: 8px; background: #eee; border-radius: 4px; margin: 10px 0; overflow: hidden; }
     .progress > div { height: 100%; background: #007acc; width: 0; }
     table { width: 100%; border-collapse: collapse; margin-top: 16px; }
     th, td { padding: 8px; text-align: center; }
     td:first-child { text-align: left; }
-    input[type="radio"] { margin: 0 6px 0 0; }
-    .question-block { margin: 20px 0; }
-    .options-vertical label { display: block; margin: 4px 0; }
-    .options-horizontal { display: flex; justify-content: space-between; margin-top: 8px; }
-    .options-horizontal label { flex: 1; text-align: center; }
-    textarea { width: 100%; height: 100px; margin-top: 8px; }
-  </style>
+    input[type="radio"], input[type="checkbox"] { margin-right: 6px; }
+    textarea { width: 100%; height: 100px; margin-top: 8px; padding: 6px; border-radius: 4px; border: 1px solid #ccc; font-family: sans-serif; }
 
+    /* Demographics styling */
+    .question-block {
+      margin: 20px 0;
+      padding: 12px;
+      background: #f9f9f9;
+      border-radius: 6px;
+      border: 1px solid #ddd;
+    }
+
+    .question-block p {
+      margin: 0 0 8px 0;
+      font-weight: bold;
+    }
+
+    .question-block label {
+      display: flex;
+      align-items: center;
+      margin: 4px 0;
+    }
+
+    .options-horizontal {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 8px;
+      gap: 10px;
+    }
+
+    .options-horizontal label {
+      flex: 1;
+      text-align: center;
+      font-size: 14px;
+      flex-direction: column;
+    }
+  </style>
 </head>
 <body>
   <!-- Consent -->
   <div class="card" id="screen-consent">
     <h1>Intro and Consent</h1>
     <p>Thank you so much for participating in our study!</p>
-    <p>
-      Currently, we are working on testing A.I. generated voices for new spoken language models.
-      We are testing voices that were trained on multiple dialects, voices, and genders, so your input about
-      these traits is important for the continued development of voice assistants.
-    </p>
-    <p>Please be as honest as possible in your feedback of these voices.</p>
-    <p>
-      Before starting, please read the <a href="#" target="_blank">Informed Consent Form</a>, 
-      and then check the box below once you are done reading.
-    </p>
     <label><input type="checkbox" id="consentCheck"> I consent to participate</label>
     <br><br>
     <button class="btn btn-primary" id="consentBtn" disabled>Continue</button>
   </div>
 
   <!-- Audio Check -->
-<div class="card hidden" id="screen-audiocheck">
-  <h1>Audio Check</h1>
-  <p>Please ensure that you can hear the audio before beginning. Follow the instructions from the audio before continuing.</p>
-  <button class="btn btn-primary" id="playAudioCheckBtn">Play Audio</button>
-  <audio id="audioCheckPlayer" src="https://nkhaloo.github.io/AAE_AI/experiment/audio_check/check.mp3"></audio>
-  <div class="question-block">
-    <p>Type the word you heard:</p>
-    <input type="text" id="audioCheckResponse" style="width:300px; padding:6px;">
+  <div class="card hidden" id="screen-audiocheck">
+    <h1>Audio Check</h1>
+    <p>Please ensure that you can hear the audio before beginning. Follow the instructions from the audio before continuing.</p>
+    <button class="btn btn-primary" id="playAudioCheckBtn">Play Audio</button>
+    <audio id="audioCheckPlayer" src="https://nkhaloo.github.io/AAE_AI/experiment/audio_check/check.mp3"></audio>
+    <div class="question-block">
+      <p>Type the word you heard:</p>
+      <input type="text" id="audioCheckResponse" style="width:300px; padding:6px;">
+    </div>
+    <button class="btn btn-primary" id="audioCheckNextBtn" disabled>Continue</button>
   </div>
-  <button class="btn btn-primary" id="audioCheckNextBtn" disabled>Continue</button>
-</div>
-
 
   <!-- Trial Block -->
   <div class="card hidden" id="screen-block">
@@ -103,100 +121,12 @@
   </div>
 
   <script>
-    const CONFIG = {
-      assetsBase: 'https://nkhaloo.github.io/AAE_AI/data/soundfiles',
-      stimuli: ['central', 'fronting', 'mono', 'raising'],
-      suffix: '.wav',
-      questions: {
-        Personality: [
-          "How friendly does this speaker sound?",
-          "How professional does this speaker sound?",
-          "How funny does this speaker sound?",
-          "How competent does this speaker sound?",
-          "How trustworthy does this speaker sound?",
-          "How pleasant does this speaker sound?"
-        ],
-        Race: [
-          { type: "radio-list", text: "What dialect region does the AI voice sound like?", options: ["Midwestern U.S.", "Northeastern U.S.", "Northwestern U.S.", "Southeastern U.S.", "Southwestern U.S.", "Non-American"] },
-          { type: "radio-list", text: "What race does the AI voice sound like?", options: ["Asian", "Black", "Latino/Hispanic", "White"] },
-          { type: "radio-list", text: "How old does the AI voice sound?", options: ["18–24", "25–34", "35–44", "45–54", "55+"] },
-          { type: "likert", text: "How feminine or masculine does the AI voice sound?", scaleMin: 1, scaleMax: 7, labels: {1:"Most feminine",4:"Androgynous",7:"Most masculine"} }
-        ]
-      },
-      bins: ['BF', 'BM', 'WF', 'WM'],
-      numsPerBin: 8,
-      scaleMin: 1,
-      scaleMax: 7
-    };
-
-    function shuffle(array) {
-      for (let i = array.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [array[i], array[j]] = [array[j], array[i]];
-      }
-      return array;
-    }
-
-    function buildAllSpeakers() {
-      const speakers = [];
-      for (const bin of CONFIG.bins) {
-        for (let n = 1; n <= CONFIG.numsPerBin; n++) speakers.push(`${bin}${n}`);
-      }
-      return speakers;
-    }
-
-    function speakerPrefixToBin(prefix) { return prefix.replace(/\d+$/, ''); }
-
-    function balancedSplit(speakers) {
-      const groupsByBin = Object.fromEntries(CONFIG.bins.map(b => [b, []]));
-      for (const s of speakers) groupsByBin[speakerPrefixToBin(s)].push(s);
-      for (const b of CONFIG.bins) shuffle(groupsByBin[b]);
-      const groupA = [], groupB = [];
-      for (const b of CONFIG.bins) {
-        groupA.push(...groupsByBin[b].slice(0, 4));
-        groupB.push(...groupsByBin[b].slice(4, 8));
-      }
-      return { A: groupA, B: groupB };
-    }
-
-    function buildBlockTrials(groupSpeakers, blockLabel) {
-      const trials = [];
-      for (const spk of groupSpeakers) {
-        for (const stim of CONFIG.stimuli) {
-          trials.push({ block: blockLabel, speaker: spk, bin: speakerPrefixToBin(spk), stimulus: stim, url: `${CONFIG.assetsBase}/${stim}/${spk}_${stim}${CONFIG.suffix}` });
-        }
-      }
-      return shuffle(trials);
-    }
-
-    const State = { blocks: {}, order: [], currentBlock: null, trialIndex: 0 };
-
     const consent = document.getElementById('screen-consent');
-    const block = document.getElementById('screen-block');
+    const audioCheck = document.getElementById('screen-audiocheck');
     const attn = document.getElementById('screen-attncheck');
     const demo = document.getElementById('screen-demographics');
     const feedback = document.getElementById('screen-feedback');
     const finish = document.getElementById('screen-finish');
-    const blockTitle = document.getElementById('blockTitle');
-    const progressBar = document.getElementById('progressBar');
-    const player = document.getElementById('player');
-    const questionsContainer = document.getElementById('questionsContainer');
-    const nextBtn = document.getElementById('nextBtn');
-
-    // Audio Check logic
-    document.getElementById('playAudioCheckBtn').addEventListener('click', () => {
-      document.getElementById('audioCheckPlayer').play();
-    });
-
-    document.getElementById('audioCheckResponse').addEventListener('input', e => {
-      document.getElementById('audioCheckNextBtn').disabled = !e.target.value.trim();
-    });
-
-    document.getElementById('audioCheckNextBtn').addEventListener('click', () => {
-      document.getElementById('screen-audiocheck').classList.add('hidden');
-      renderBlock('Personality'); // go to first real block
-    });
-
 
     // Consent logic
     document.getElementById('consentCheck').addEventListener('change', e => {
@@ -208,125 +138,21 @@
         return;
       }
       consent.classList.add('hidden');
-      document.getElementById('screen-audiocheck').classList.remove('hidden');
-
+      audioCheck.classList.remove('hidden');
     });
 
-    function startExperiment() {
-      const speakers = buildAllSpeakers();
-      const {A, B} = balancedSplit(speakers);
-      const map = { Personality: 'A', Race: 'B' };
-      State.order = ['Personality','Race'];
-      const groupFor = blockName => (map[blockName] === 'A' ? A : B);
-      State.blocks = {
-        Personality: buildBlockTrials(groupFor('Personality'), 'Personality'),
-        Race: buildBlockTrials(groupFor('Race'), 'Race')
-      };
-      consent.classList.add('hidden');
-      renderBlock(State.order[0]);
-    }
-
-    function renderBlock(blockName) {
-      State.currentBlock = blockName; State.trialIndex = 0;
-      renderQuestions(blockName);
-      blockTitle.textContent = `${blockName} Block`;
-      block.classList.remove('hidden');
-      updateTrialUI();
-      nextBtn.onclick = handleNext;
-    }
-
-    function currentTrials() { return State.blocks[State.currentBlock]; }
-    function currentTrial() { return currentTrials()[State.trialIndex]; }
-
-    function renderQuestions(blockName) {
-      if (blockName === "Personality") {
-        let html = '<table><tr><th></th>';
-        for (let v = CONFIG.scaleMin; v <= CONFIG.scaleMax; v++) {
-          if (v === CONFIG.scaleMin) {
-            html += `<th>${v}<br><small>Least</small></th>`;
-          } else if (v === CONFIG.scaleMax) {
-            html += `<th>${v}<br><small>Most</small></th>`;
-          } else {
-            html += `<th>${v}</th>`;
-          }
-        }
-        html += '</tr>';
-        CONFIG.questions.Personality.forEach((q, i) => {
-          html += `<tr><td>${q}</td>`;
-          for (let v = CONFIG.scaleMin; v <= CONFIG.scaleMax; v++) {
-            const id = `q${i}_${v}`;
-            html += `<td><input type="radio" name="q${i}" value="${v}" id="${id}"></td>`;
-          }
-          html += '</tr>';
-        });
-        html += '</table>';
-        questionsContainer.innerHTML = html;
-      } else if (blockName === "Race") {
-        let html = '';
-        CONFIG.questions.Race.forEach((q, i) => {
-          if (q.type === "radio-list") {
-            html += `<div class="question-block"><p>${q.text}</p><div class="options-vertical">`;
-            q.options.forEach((opt,j) => {
-              const id = `race${i}_${j}`;
-              html += `<label><input type="radio" name="race${i}" value="${opt}" id="${id}"> ${opt}</label>`;
-            });
-            html += '</div></div>';
-          } else if (q.type === "likert") {
-            html += `<div class="question-block"><p>${q.text}</p><div class="options-horizontal">`;
-            for (let v = q.scaleMin; v <= q.scaleMax; v++) {
-              const label = q.labels && q.labels[v] ? q.labels[v] : v;
-              const id = `race${i}_${v}`;
-              html += `<label><input type="radio" name="race${i}" value="${v}" id="${id}"><br>${label}</label>`;
-            }
-            html += '</div></div>';
-          }
-        });
-        questionsContainer.innerHTML = html;
-      }
-      document.querySelectorAll('input[type=radio]').forEach(inp =>
-        inp.addEventListener('change', () => nextBtn.disabled = !allAnswered(blockName))
-      );
-    }
-
-    function allAnswered(blockName) {
-      if (blockName === "Personality") {
-        return CONFIG.questions.Personality.every((q,i) => document.querySelector(`input[name="q${i}"]:checked`));
-      } else if (blockName === "Race") {
-        return CONFIG.questions.Race.every((q,i) => document.querySelector(`input[name="race${i}"]:checked`));
-      }
-      return false;
-    }
-
-    function clearAnswers() {
-      document.querySelectorAll('input[type="radio"]').forEach(inp => inp.checked = false);
-      nextBtn.disabled = true;
-    }
-
-    function updateTrialUI() {
-      const trials = currentTrials();
-      const t = currentTrial();
-      const total = trials.length;
-      progressBar.style.width = `${((State.trialIndex)/total)*100}%`;
-      player.src = t.url;
-      clearAnswers();
-
-      // disable until audio ends
-      document.querySelectorAll('#questionsContainer input').forEach(inp => inp.disabled = true);
-      player.onended = () => {
-        document.querySelectorAll('#questionsContainer input').forEach(inp => inp.disabled = false);
-      };
-    }
-
-    function handleNext() {
-      State.trialIndex++;
-      const trials = currentTrials();
-      if (State.trialIndex < trials.length) updateTrialUI();
-      else {
-        const idx = State.order.indexOf(State.currentBlock);
-        if (idx === 0) { block.classList.add('hidden'); attn.classList.remove('hidden'); }
-        else { block.classList.add('hidden'); renderDemographics(); }
-      }
-    }
+    // Audio Check logic
+    document.getElementById('playAudioCheckBtn').addEventListener('click', () => {
+      document.getElementById('audioCheckPlayer').play();
+    });
+    document.getElementById('audioCheckResponse').addEventListener('input', e => {
+      document.getElementById('audioCheckNextBtn').disabled = !e.target.value.trim();
+    });
+    document.getElementById('audioCheckNextBtn').addEventListener('click', () => {
+      audioCheck.classList.add('hidden');
+      // startExperiment(); // Here you’d normally launch Personality → Attention → Race
+      attn.classList.remove('hidden'); // placeholder flow
+    });
 
     // Attention check requires response
     document.getElementById('attnNextBtn').addEventListener('click', () => {
@@ -336,12 +162,103 @@
         return;
       }
       attn.classList.add('hidden');
-      renderBlock('Race');
+      renderDemographics();
     });
 
     function renderDemographics() {
       demo.classList.remove('hidden');
-      document.getElementById('demoQuestions').innerHTML = "<p>[Demographic questions go here]</p>";
+      let html = '';
+
+      // Age
+      html += `<div class="question-block"><p>Please select your age range.</p>`;
+      ["18–24","25–34","35–44","45–54","55+"].forEach(opt => {
+        html += `<label><input type="radio" name="age" value="${opt}"> ${opt}</label>`;
+      });
+      html += `</div>`;
+
+      // Ethnicity
+      html += `<div class="question-block"><p>Which race/ethnicities do you most strongly identify with? (Check all that apply)</p>`;
+      ["Asian American","Black American","Hispanic/Latino American","White American","Native American or other Indigenous culture","Other"].forEach(opt => {
+        html += `<label><input type="checkbox" name="ethnicity" value="${opt}"> ${opt}</label>`;
+      });
+      html += `</div>`;
+
+      // Dialect
+      html += `<div class="question-block"><p>What regional dialect do you believe is closest to the way you speak?</p>`;
+      ["Midwestern U.S.","Northeastern U.S.","Northwestern U.S.","Southeastern U.S.","Southwestern U.S."].forEach(opt => {
+        html += `<label><input type="radio" name="dialect" value="${opt}"> ${opt}</label>`;
+      });
+      html += `</div>`;
+
+      // Gender
+      html += `<div class="question-block"><p>What is your gender?</p>`;
+      ["Male","Female","Non-binary"].forEach(opt => {
+        html += `<label><input type="radio" name="gender" value="${opt}"> ${opt}</label>`;
+      });
+      html += `</div>`;
+
+      // First language
+      html += `<div class="question-block"><p>What is/are your first language(s)?</p>`;
+      ["English only","English and another language","Another language only"].forEach(opt => {
+        html += `<label><input type="radio" name="firstlang" value="${opt}"> ${opt}</label>`;
+      });
+      html += `<div id="otherLangBox" class="hidden"><p>Please enter the language(s) besides English that you grew up speaking:</p><textarea id="otherLangText"></textarea></div>`;
+      html += `</div>`;
+
+      // Speech/hearing disorder
+      html += `<div class="question-block"><p>Do you have any speech or hearing disorders?</p>`;
+      ["No","Yes"].forEach(opt => {
+        html += `<label><input type="radio" name="speech" value="${opt}"> ${opt}</label>`;
+      });
+      html += `<div id="speechDescBox" class="hidden"><p>Please briefly describe the speech or hearing disorder:</p><textarea id="speechDescText"></textarea></div>`;
+      html += `</div>`;
+
+      // Neurodivergence
+      html += `<div class="question-block"><p>Have you been diagnosed by a medical professional as neurodivergent?</p>`;
+      ["No","Yes"].forEach(opt => {
+        html += `<label><input type="radio" name="neuro" value="${opt}"> ${opt}</label>`;
+      });
+      html += `<div id="neuroDescBox" class="hidden"><p>Please briefly state what kind of neurodivergence you have been diagnosed with:</p><textarea id="neuroDescText"></textarea></div>`;
+      html += `</div>`;
+
+      // Tech use
+      html += `<div class="question-block"><p>Please state all of the technologies that you use on a regular basis:</p>`;
+      ["ChatGPT Voice Assistant","Google Gemini Voice","Amazon Alexa","Apple Siri","Microsoft Cortana","Voice-based navigation apps","Other text-to-speech software","None of the above"].forEach(opt => {
+        html += `<label><input type="checkbox" name="tech" value="${opt}"> ${opt}</label>`;
+      });
+      html += `</div>`;
+
+      // AI frequency
+      html += `<div class="question-block"><p>How often do you use AI-based software or AI voice assistants?</p>`;
+      ["Never","Less than once per week","A few times per week","About once per day","Several times per day"].forEach(opt => {
+        html += `<label><input type="radio" name="aiuse" value="${opt}"> ${opt}</label>`;
+      });
+      html += `</div>`;
+
+      // AI attitude
+      html += `<div class="question-block"><p>What is your attitude towards AI-based software or AI voice assistants?</p><div class="options-horizontal">`;
+      for (let v = 1; v <= 7; v++) {
+        let label = "";
+        if (v === 1) label = "Very negative";
+        if (v === 4) label = "Neutral";
+        if (v === 7) label = "Very positive";
+        html += `<label><input type="radio" name="aiatt" value="${v}"><br>${v}${label ? "<br>("+label+")" : ""}</label>`;
+      }
+      html += `</div></div>`;
+
+      document.getElementById('demoQuestions').innerHTML = html;
+
+      // Conditional fields
+      document.querySelectorAll('input[name="firstlang"]').forEach(inp => inp.addEventListener('change', e => {
+        document.getElementById('otherLangBox').classList.toggle('hidden', e.target.value === "English only");
+      }));
+      document.querySelectorAll('input[name="speech"]').forEach(inp => inp.addEventListener('change', e => {
+        document.getElementById('speechDescBox').classList.toggle('hidden', e.target.value !== "Yes");
+      }));
+      document.querySelectorAll('input[name="neuro"]').forEach(inp => inp.addEventListener('change', e => {
+        document.getElementById('neuroDescBox').classList.toggle('hidden', e.target.value !== "Yes");
+      }));
+
       document.getElementById('demoNextBtn').onclick = () => { demo.classList.add('hidden'); feedback.classList.remove('hidden'); };
     }
 
