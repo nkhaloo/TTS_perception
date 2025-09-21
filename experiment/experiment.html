@@ -10,6 +10,7 @@
     h1 { font-size: 24px; margin-top: 0; }
     .btn { padding: 10px 16px; border: none; border-radius: 6px; cursor: pointer; }
     .btn-primary { background: #007acc; color: white; }
+    .btn-primary:disabled { background: #a0aec0; color: #e2e8f0; cursor: not-allowed; }  /* 👈 added */
     .hidden { display: none; }
     .progress { height: 8px; background: #eee; border-radius: 4px; margin: 10px 0; overflow: hidden; }
     .progress > div { height: 100%; background: #007acc; width: 0; }
@@ -23,6 +24,7 @@
     .options-horizontal label { flex: 1; text-align: center; }
     textarea { width: 100%; height: 100px; margin-top: 8px; }
   </style>
+
 </head>
 <body>
   <!-- Consent -->
@@ -167,10 +169,17 @@
     const questionsContainer = document.getElementById('questionsContainer');
     const nextBtn = document.getElementById('nextBtn');
 
+    // Consent logic
     document.getElementById('consentCheck').addEventListener('change', e => {
       document.getElementById('consentBtn').disabled = !e.target.checked;
     });
-    document.getElementById('consentBtn').addEventListener('click', startExperiment);
+    document.getElementById('consentBtn').addEventListener('click', () => {
+      if (!document.getElementById('consentCheck').checked) {
+        alert("You must consent before continuing.");
+        return;
+      }
+      startExperiment();
+    });
 
     function startExperiment() {
       const speakers = buildAllSpeakers();
@@ -201,7 +210,15 @@
     function renderQuestions(blockName) {
       if (blockName === "Personality") {
         let html = '<table><tr><th></th>';
-        for (let v = CONFIG.scaleMin; v <= CONFIG.scaleMax; v++) html += `<th>${v}</th>`;
+        for (let v = CONFIG.scaleMin; v <= CONFIG.scaleMax; v++) {
+          if (v === CONFIG.scaleMin) {
+            html += `<th>${v}<br><small>Least</small></th>`;
+          } else if (v === CONFIG.scaleMax) {
+            html += `<th>${v}<br><small>Most</small></th>`;
+          } else {
+            html += `<th>${v}</th>`;
+          }
+        }
         html += '</tr>';
         CONFIG.questions.Personality.forEach((q, i) => {
           html += `<tr><td>${q}</td>`;
@@ -235,7 +252,9 @@
         });
         questionsContainer.innerHTML = html;
       }
-      document.querySelectorAll('input[type=radio]').forEach(inp => inp.addEventListener('change', () => nextBtn.disabled = !allAnswered(blockName)));
+      document.querySelectorAll('input[type=radio]').forEach(inp =>
+        inp.addEventListener('change', () => nextBtn.disabled = !allAnswered(blockName))
+      );
     }
 
     function allAnswered(blockName) {
@@ -278,7 +297,13 @@
       }
     }
 
+    // Attention check requires response
     document.getElementById('attnNextBtn').addEventListener('click', () => {
+      const resp = document.getElementById('attnResponse').value.trim();
+      if (!resp) {
+        alert("Please enter an answer before continuing.");
+        return;
+      }
       attn.classList.add('hidden');
       renderBlock('Race');
     });
