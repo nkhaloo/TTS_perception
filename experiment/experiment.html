@@ -46,6 +46,20 @@
     <button class="btn btn-primary" id="consentBtn" disabled>Continue</button>
   </div>
 
+  <!-- Audio Check -->
+<div class="card hidden" id="screen-audiocheck">
+  <h1>Audio Check</h1>
+  <p>Please ensure that you can hear the audio before beginning. Follow the instructions from the audio before continuing.</p>
+  <button class="btn btn-primary" id="playAudioCheckBtn">Play Audio</button>
+  <audio id="audioCheckPlayer" src="https://nkhaloo.github.io/AAE_AI/experiment/audio_check/check.mp3"></audio>
+  <div class="question-block">
+    <p>Type the word you heard:</p>
+    <input type="text" id="audioCheckResponse" style="width:300px; padding:6px;">
+  </div>
+  <button class="btn btn-primary" id="audioCheckNextBtn" disabled>Continue</button>
+</div>
+
+
   <!-- Trial Block -->
   <div class="card hidden" id="screen-block">
     <h1 id="blockTitle">Block</h1>
@@ -169,6 +183,21 @@
     const questionsContainer = document.getElementById('questionsContainer');
     const nextBtn = document.getElementById('nextBtn');
 
+    // Audio Check logic
+    document.getElementById('playAudioCheckBtn').addEventListener('click', () => {
+      document.getElementById('audioCheckPlayer').play();
+    });
+
+    document.getElementById('audioCheckResponse').addEventListener('input', e => {
+      document.getElementById('audioCheckNextBtn').disabled = !e.target.value.trim();
+    });
+
+    document.getElementById('audioCheckNextBtn').addEventListener('click', () => {
+      document.getElementById('screen-audiocheck').classList.add('hidden');
+      renderBlock('Personality'); // go to first real block
+    });
+
+
     // Consent logic
     document.getElementById('consentCheck').addEventListener('change', e => {
       document.getElementById('consentBtn').disabled = !e.target.checked;
@@ -178,7 +207,9 @@
         alert("You must consent before continuing.");
         return;
       }
-      startExperiment();
+      consent.classList.add('hidden');
+      document.getElementById('screen-audiocheck').classList.remove('hidden');
+
     });
 
     function startExperiment() {
