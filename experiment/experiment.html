@@ -60,22 +60,19 @@
   <div class="card" id="screen-consent">
     <h1>Intro and Consent</h1>
     <p>Thank you so much for participating in our study!</p>
+    <p>
+      Currently, we are working on testing AI. generated voices for new spoken language models.
+      We are testing voices that were trained on multiple dialects, voices, and genders, so your input
+      about these traits is important for the continued development of voice assistants.
+    </p>
+    <p>Please be as honest as possible in your feedback of these voices.</p>
+    <p>
+      Before starting, please read the <a href="#" target="_blank">Informed Consent Form</a>, 
+      and then check the box below once you are done reading.
+    </p>
     <label><input type="checkbox" id="consentCheck"> I consent to participate</label>
     <br><br>
     <button class="btn btn-primary" id="consentBtn" disabled>Continue</button>
-  </div>
-
-  <!-- Audio Check -->
-  <div class="card hidden" id="screen-audiocheck">
-    <h1>Audio Check</h1>
-    <p>Please ensure that you can hear the audio before beginning. Follow the instructions from the audio before continuing.</p>
-    <button class="btn btn-primary" id="playAudioCheckBtn">Play Audio</button>
-    <audio id="audioCheckPlayer" src="https://nkhaloo.github.io/AAE_AI/experiment/audio_check/check.mp3"></audio>
-    <div class="question-block">
-      <p>Type the word you heard:</p>
-      <input type="text" id="audioCheckResponse" style="width:300px; padding:6px;">
-    </div>
-    <button class="btn btn-primary" id="audioCheckNextBtn" disabled>Continue</button>
   </div>
 
   <!-- Trial Block -->
