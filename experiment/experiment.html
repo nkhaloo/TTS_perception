@@ -61,7 +61,7 @@
     <h1>Intro and Consent</h1>
     <p>Thank you so much for participating in our study!</p>
     <p>
-      Currently, we are working on testing AI. generated voices for new spoken language models.
+      Currently, we are working on testing A.I. generated voices for new spoken language models.
       We are testing voices that were trained on multiple dialects, voices, and genders, so your input
       about these traits is important for the continued development of voice assistants.
     </p>
@@ -75,9 +75,22 @@
     <button class="btn btn-primary" id="consentBtn" disabled>Continue</button>
   </div>
 
+  <!-- Audio Check -->
+  <div class="card hidden" id="screen-audiocheck">
+    <h1>Audio Check</h1>
+    <p>Please ensure that you can hear the audio before beginning. Follow the instructions from the audio before continuing.</p>
+    <button class="btn btn-primary" id="playAudioCheckBtn">Play Audio</button>
+    <audio id="audioCheckPlayer" src="https://nkhaloo.github.io/AAE_AI/experiment/audio_check/check.mp3"></audio>
+    <div class="question-block">
+      <p>Type the word you heard:</p>
+      <input type="text" id="audioCheckResponse" style="width:300px; padding:6px;">
+    </div>
+    <button class="btn btn-primary" id="audioCheckNextBtn" disabled>Continue</button>
+  </div>
+
   <!-- Trial Block -->
   <div class="card hidden" id="screen-block">
-    <h1 id="blockTitle">Block</h1>
+    <h1 id="blockTitle"></h1>
     <div class="progress"><div id="progressBar"></div></div>
     <p>Please press Play to listen to the audio:</p>
     <audio id="player" preload="auto" controls controlsList="nodownload noplaybackrate"></audio>
@@ -120,7 +133,7 @@
   <script>
     const CONFIG = {
       assetsBase: 'https://nkhaloo.github.io/AAE_AI/data/soundfiles',
-      stimuli: ['central', 'fronting', 'mono', 'raising'],
+      stimuli: ['central','fronting','mono','raising'],
       suffix: '.wav',
       questions: {
         Personality: [
@@ -132,49 +145,25 @@
           "How pleasant does this speaker sound?"
         ],
         Race: [
-          { type: "radio-list", text: "What dialect region does the AI voice sound like?", options: ["Midwestern U.S.","Northeastern U.S.","Northwestern U.S.","Southeastern U.S.","Southwestern U.S.","Non-American"] },
-          { type: "radio-list", text: "What race does the AI voice sound like?", options: ["Asian","Black","Latino/Hispanic","White"] },
-          { type: "radio-list", text: "How old does the AI voice sound?", options: ["18–24","25–34","35–44","45–54","55+"] },
-          { type: "likert", text: "How feminine or masculine does the AI voice sound?", scaleMin: 1, scaleMax: 7, labels: {1:"Most feminine",4:"Androgynous",7:"Most masculine"} }
+          { type:"radio-list", text:"What dialect region does the AI voice sound like?", options:["Midwestern U.S.","Northeastern U.S.","Northwestern U.S.","Southeastern U.S.","Southwestern U.S.","Non-American"] },
+          { type:"radio-list", text:"What race does the AI voice sound like?", options:["Asian","Black","Latino/Hispanic","White"] },
+          { type:"radio-list", text:"How old does the AI voice sound?", options:["18–24","25–34","35–44","45–54","55+"] },
+          { type:"likert", text:"How feminine or masculine does the AI voice sound?", scaleMin:1, scaleMax:7, labels:{1:"Most feminine",4:"Androgynous",7:"Most masculine"} }
         ]
       },
-      bins: ['BF','BM','WF','WM'],
-      numsPerBin: 8,
-      scaleMin: 1,
-      scaleMax: 7
+      bins:['BF','BM','WF','WM'],
+      numsPerBin:8,
+      scaleMin:1,
+      scaleMax:7
     };
 
-    function shuffle(array) {
-      for (let i=array.length-1; i>0; i--) {
-        const j = Math.floor(Math.random()*(i+1));
-        [array[i],array[j]]=[array[j],array[i]];
-      }
-      return array;
-    }
-    function buildAllSpeakers() {
-      const speakers=[];
-      for (const bin of CONFIG.bins) {
-        for (let n=1;n<=CONFIG.numsPerBin;n++) speakers.push(`${bin}${n}`);
-      }
-      return speakers;
-    }
-    function speakerPrefixToBin(prefix){return prefix.replace(/\d+$/,'');}
-    function balancedSplit(speakers){
-      const groupsByBin=Object.fromEntries(CONFIG.bins.map(b=>[b,[]]));
-      for(const s of speakers) groupsByBin[speakerPrefixToBin(s)].push(s);
-      for(const b of CONFIG.bins) shuffle(groupsByBin[b]);
-      const groupA=[],groupB=[];
-      for(const b of CONFIG.bins){groupA.push(...groupsByBin[b].slice(0,4));groupB.push(...groupsByBin[b].slice(4,8));}
-      return {A:groupA,B:groupB};
-    }
-    function buildBlockTrials(groupSpeakers,blockLabel){
-      const trials=[];
-      for(const spk of groupSpeakers){for(const stim of CONFIG.stimuli){
-        trials.push({block:blockLabel,speaker:spk,bin:speakerPrefixToBin(spk),stimulus:stim,url:`${CONFIG.assetsBase}/${stim}/${spk}_${stim}${CONFIG.suffix}`});
-      }}
-      return shuffle(trials);
-    }
+    function shuffle(arr){for(let i=arr.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]];}return arr;}
+    function buildAllSpeakers(){const s=[];for(const b of CONFIG.bins){for(let n=1;n<=CONFIG.numsPerBin;n++){s.push(`${b}${n}`);}}return s;}
+    function speakerPrefixToBin(p){return p.replace(/\d+$/,'');}
+    function balancedSplit(speakers){const g=Object.fromEntries(CONFIG.bins.map(b=>[b,[]]));for(const s of speakers)g[speakerPrefixToBin(s)].push(s);for(const b of CONFIG.bins)shuffle(g[b]);const A=[],B=[];for(const b of CONFIG.bins){A.push(...g[b].slice(0,4));B.push(...g[b].slice(4,8));}return {A,B};}
+    function buildBlockTrials(gs,bl){const t=[];for(const sp of gs){for(const st of CONFIG.stimuli){t.push({block:bl,speaker:sp,bin:speakerPrefixToBin(sp),stimulus:st,url:`${CONFIG.assetsBase}/${st}/${sp}_${st}${CONFIG.suffix}`});}}return shuffle(t);}
 
+    const State={blocks:{},order:[],currentBlock:null,trialIndex:0};
     const consent=document.getElementById('screen-consent');
     const audioCheck=document.getElementById('screen-audiocheck');
     const block=document.getElementById('screen-block');
@@ -189,118 +178,50 @@
     const nextBtn=document.getElementById('nextBtn');
 
     // Consent
-    document.getElementById('consentCheck').addEventListener('change',e=>{
-      document.getElementById('consentBtn').disabled=!e.target.checked;
-    });
-    document.getElementById('consentBtn').addEventListener('click',()=>{
-      if(!document.getElementById('consentCheck').checked){alert("You must consent before continuing.");return;}
-      consent.classList.add('hidden');
-      audioCheck.classList.remove('hidden');
-    });
+    document.getElementById('consentCheck').addEventListener('change',e=>{document.getElementById('consentBtn').disabled=!e.target.checked;});
+    document.getElementById('consentBtn').addEventListener('click',()=>{if(!document.getElementById('consentCheck').checked){alert("You must consent before continuing.");return;}consent.classList.add('hidden');audioCheck.classList.remove('hidden');});
 
     // Audio check
     document.getElementById('playAudioCheckBtn').addEventListener('click',()=>{document.getElementById('audioCheckPlayer').play();});
-    document.getElementById('audioCheckResponse').addEventListener('input',e=>{
-      document.getElementById('audioCheckNextBtn').disabled=!e.target.value.trim();
-    });
-    document.getElementById('audioCheckNextBtn').addEventListener('click',()=>{
-      audioCheck.classList.add('hidden');
-      startExperiment();
-    });
+    document.getElementById('audioCheckResponse').addEventListener('input',e=>{document.getElementById('audioCheckNextBtn').disabled=!e.target.value.trim();});
+    document.getElementById('audioCheckNextBtn').addEventListener('click',()=>{audioCheck.classList.add('hidden');startExperiment();});
 
-    function startExperiment(){
-      const speakers=buildAllSpeakers();
-      const {A,B}=balancedSplit(speakers);
-      const map={Personality:'A',Race:'B'};
-      const groupFor=bn=>(map[bn]==='A'?A:B);
-      State.blocks={Personality:buildBlockTrials(groupFor('Personality'),'Personality'),Race:buildBlockTrials(groupFor('Race'),'Race')};
-      State.order=['Personality','Race'];
-      renderBlock(State.order[0]);
-    }
+    function startExperiment(){const speakers=buildAllSpeakers();const {A,B}=balancedSplit(speakers);const map={Personality:'A',Race:'B'};const groupFor=b=>(map[b]==='A'?A:B);State.blocks={Personality:buildBlockTrials(groupFor('Personality'),'Personality'),Race:buildBlockTrials(groupFor('Race'),'Race')};State.order=['Personality','Race'];renderBlock(State.order[0]);}
 
-    const State={blocks:{},order:[],currentBlock:null,trialIndex:0};
-
-    function renderBlock(blockName){
-      State.currentBlock=blockName;State.trialIndex=0;
-      renderQuestions(blockName);
-      blockTitle.textContent= '';
-      block.classList.remove('hidden');
-      updateTrialUI();
-      nextBtn.onclick=handleNext;
-    }
+    function renderBlock(bn){State.currentBlock=bn;State.trialIndex=0;renderQuestions(bn);blockTitle.textContent="";block.classList.remove('hidden');updateTrialUI();nextBtn.onclick=handleNext;}
     function currentTrials(){return State.blocks[State.currentBlock];}
     function currentTrial(){return currentTrials()[State.trialIndex];}
-    function renderQuestions(blockName){
-      if(blockName==="Personality"){
-        let html='<table><tr><th></th>';
-        for(let v=CONFIG.scaleMin;v<=CONFIG.scaleMax;v++){
-          if(v===CONFIG.scaleMin){html+=`<th>${v}<br><small>Least</small></th>`;}
-          else if(v===CONFIG.scaleMax){html+=`<th>${v}<br><small>Most</small></th>`;}
-          else{html+=`<th>${v}</th>`;}
-        }
-        html+='</tr>';
-        CONFIG.questions.Personality.forEach((q,i)=>{
-          html+=`<tr><td>${q}</td>`;
-          for(let v=CONFIG.scaleMin;v<=CONFIG.scaleMax;v++){
-            const id=`q${i}_${v}`;
-            html+=`<td><input type="radio" name="q${i}" value="${v}" id="${id}"></td>`;
-          }
-          html+='</tr>';
-        });
-        html+='</table>';questionsContainer.innerHTML=html;
-      } else if(blockName==="Race"){
-        let html='';CONFIG.questions.Race.forEach((q,i)=>{
-          if(q.type==="radio-list"){html+=`<div class="question-block"><p>${q.text}</p><div class="options-vertical">`;
-            q.options.forEach((opt,j)=>{const id=`race${i}_${j}`;html+=`<label><input type="radio" name="race${i}" value="${opt}" id="${id}"> ${opt}</label>`;});
-            html+='</div></div>';
-          } else if(q.type==="likert"){html+=`<div class="question-block"><p>${q.text}</p><div class="options-horizontal">`;
-            for(let v=q.scaleMin;v<=q.scaleMax;v++){const label=q.labels&&q.labels[v]?q.labels[v]:v;const id=`race${i}_${v}`;html+=`<label><input type="radio" name="race${i}" value="${v}" id="${id}"><br>${label}</label>`;}
-            html+='</div></div>';
-          }});
-        questionsContainer.innerHTML=html;
-      }
-      document.querySelectorAll('input[type=radio]').forEach(inp=>inp.addEventListener('change',()=>nextBtn.disabled=!allAnswered(blockName)));
+    function renderQuestions(bn){
+      if(bn==="Personality"){let html='<table><tr><th></th>';for(let v=CONFIG.scaleMin;v<=CONFIG.scaleMax;v++){if(v===CONFIG.scaleMin){html+=`<th>${v}<br><small>Least</small></th>`;}else if(v===CONFIG.scaleMax){html+=`<th>${v}<br><small>Most</small></th>`;}else{html+=`<th>${v}</th>`;}}html+='</tr>';CONFIG.questions.Personality.forEach((q,i)=>{html+=`<tr><td>${q}</td>`;for(let v=CONFIG.scaleMin;v<=CONFIG.scaleMax;v++){const id=`q${i}_${v}`;html+=`<td><input type="radio" name="q${i}" value="${v}" id="${id}"></td>`;}html+='</tr>';});html+='</table>';questionsContainer.innerHTML=html;}
+      else if(bn==="Race"){let html='';CONFIG.questions.Race.forEach((q,i)=>{if(q.type==="radio-list"){html+=`<div class="question-block"><p>${q.text}</p><div class="options-vertical">`;q.options.forEach((opt,j)=>{const id=`race${i}_${j}`;html+=`<label><input type="radio" name="race${i}" value="${opt}" id="${id}"> ${opt}</label>`;});html+='</div></div>';}else if(q.type==="likert"){html+=`<div class="question-block"><p>${q.text}</p><div class="options-horizontal">`;for(let v=q.scaleMin;v<=q.scaleMax;v++){const label=q.labels&&q.labels[v]?q.labels[v]:v;const id=`race${i}_${v}`;html+=`<label><input type="radio" name="race${i}" value="${v}" id="${id}"><br>${label}</label>`;}html+='</div></div>';}});questionsContainer.innerHTML=html;}
+      document.querySelectorAll('input[type=radio]').forEach(inp=>inp.addEventListener('change',()=>nextBtn.disabled=!allAnswered(bn)));
     }
-    function allAnswered(blockName){
-      if(blockName==="Personality"){return CONFIG.questions.Personality.every((q,i)=>document.querySelector(`input[name="q${i}"]:checked`));}
-      else if(blockName==="Race"){return CONFIG.questions.Race.every((q,i)=>document.querySelector(`input[name="race${i}"]:checked`));}
-      return false;
-    }
+    function allAnswered(bn){if(bn==="Personality"){return CONFIG.questions.Personality.every((q,i)=>document.querySelector(`input[name="q${i}"]:checked`));}else if(bn==="Race"){return CONFIG.questions.Race.every((q,i)=>document.querySelector(`input[name="race${i}"]:checked`));}return false;}
     function clearAnswers(){document.querySelectorAll('input[type="radio"]').forEach(inp=>inp.checked=false);nextBtn.disabled=true;}
-    function updateTrialUI(){
-      const t=currentTrial();const total=currentTrials().length;
-      progressBar.style.width=`${((State.trialIndex)/total)*100}%`;player.src=t.url;clearAnswers();
-      document.querySelectorAll('#questionsContainer input').forEach(inp=>inp.disabled=true);
-      player.onended=()=>{document.querySelectorAll('#questionsContainer input').forEach(inp=>inp.disabled=false);};
-    }
-    function handleNext(){
-      State.trialIndex++;if(State.trialIndex<currentTrials().length)updateTrialUI();
-      else{const idx=State.order.indexOf(State.currentBlock);
-        if(idx===0){block.classList.add('hidden');attn.classList.remove('hidden');}
-        else{block.classList.add('hidden');renderDemographics();}
-      }
-    }
+    function updateTrialUI(){const t=currentTrial();const total=currentTrials().length;progressBar.style.width=`${((State.trialIndex)/total)*100}%`;player.src=t.url;clearAnswers();document.querySelectorAll('#questionsContainer input').forEach(inp=>inp.disabled=true);player.onended=()=>{document.querySelectorAll('#questionsContainer input').forEach(inp=>inp.disabled=false);};}
+    function handleNext(){State.trialIndex++;if(State.trialIndex<currentTrials().length)updateTrialUI();else{const idx=State.order.indexOf(State.currentBlock);if(idx===0){block.classList.add('hidden');attn.classList.remove('hidden');}else{block.classList.add('hidden');renderDemographics();}}}
 
-    document.getElementById('attnNextBtn').addEventListener('click',()=>{
-      const resp=document.getElementById('attnResponse').value.trim();
-      if(!resp){alert("Please enter an answer before continuing.");return;}
-      attn.classList.add('hidden');renderBlock('Race');
-    });
+    document.getElementById('attnNextBtn').addEventListener('click',()=>{const resp=document.getElementById('attnResponse').value.trim();if(!resp){alert("Please enter an answer before continuing.");return;}attn.classList.add('hidden');renderBlock('Race');});
 
     function renderDemographics(){
       demo.classList.remove('hidden');let html='';
-      // Age
-      html+=`<div class="question-block"><p>Please select your age range.</p>`;
-      ["18–24","25–34","35–44","45–54","55+"].forEach(opt=>{html+=`<label><input type="radio" name="age" value="${opt}"> ${opt}</label>`;});
-      html+=`</div>`;
-      // Ethnicity
-      html+=`<div class="question-block"><p>Which race/ethnicities...</p>`;
-      ["Asian American","Black American","Hispanic/Latino American","White American","Native American or other Indigenous culture","Other"].forEach(opt=>{html+=`<label><input type="checkbox" name="ethnicity" value="${opt}"> ${opt}</label>`;});
-      html+=`</div>`;
-      // etc… (Dialect, Gender, First language, Speech disorder, Neurodivergence, Tech use, AI frequency, AI attitude same as before)
+      html+=`<div class="question-block"><p>Please select your age range.</p>`;["18–24","25–34","35–44","45–54","55+"].forEach(opt=>{html+=`<label><input type="radio" name="age" value="${opt}"> ${opt}</label>`;});html+=`</div>`;
+      html+=`<div class="question-block"><p>Which race/ethnicities do you most strongly identify with? (Check all that apply)</p>`;["Asian American","Black American","Hispanic/Latino American","White American","Native American or other Indigenous culture","Other"].forEach(opt=>{html+=`<label><input type="checkbox" name="ethnicity" value="${opt}"> ${opt}</label>`;});html+=`</div>`;
+      html+=`<div class="question-block"><p>What regional dialect do you believe is closest to the way you speak?</p>`;["Midwestern U.S.","Northeastern U.S.","Northwestern U.S.","Southeastern U.S.","Southwestern U.S."].forEach(opt=>{html+=`<label><input type="radio" name="dialect" value="${opt}"> ${opt}</label>`;});html+=`</div>`;
+      html+=`<div class="question-block"><p>What is your gender?</p>`;["Male","Female","Non-binary"].forEach(opt=>{html+=`<label><input type="radio" name="gender" value="${opt}"> ${opt}</label>`;});html+=`</div>`;
+      html+=`<div class="question-block"><p>What is/are your first language(s)?</p>`;["English only","English and another language","Another language only"].forEach(opt=>{html+=`<label><input type="radio" name="firstlang" value="${opt}"> ${opt}</label>`;});html+=`<div id="otherLangBox" class="hidden"><p>Please enter the language(s) besides English that you grew up speaking:</p><textarea id="otherLangText"></textarea></div>`;html+=`</div>`;
+      html+=`<div class="question-block"><p>Do you have any speech or hearing disorders?</p>`;["No","Yes"].forEach(opt=>{html+=`<label><input type="radio" name="speech" value="${opt}"> ${opt}</label>`;});html+=`<div id="speechDescBox" class="hidden"><p>Please briefly describe the speech or hearing disorder:</p><textarea id="speechDescText"></textarea></div>`;html+=`</div>`;
+      html+=`<div class="question-block"><p>Have you been diagnosed by a medical professional as neurodivergent?</p>`;["No","Yes"].forEach(opt=>{html+=`<label><input type="radio" name="neuro" value="${opt}"> ${opt}</label>`;});html+=`<div id="neuroDescBox" class="hidden"><p>Please briefly state what kind of neurodivergence you have been diagnosed with:</p><textarea id="neuroDescText"></textarea></div>`;html+=`</div>`;
+      html+=`<div class="question-block"><p>Please state all of the technologies that you use on a regular basis:</p>`;["ChatGPT Voice Assistant","Google Gemini Voice","Amazon Alexa","Apple Siri","Microsoft Cortana","Voice-based navigation apps","Other text-to-speech software","None of the above"].forEach(opt=>{html+=`<label><input type="checkbox" name="tech" value="${opt}"> ${opt}</label>`;});html+=`</div>`;
+      html+=`<div class="question-block"><p>How often do you use AI-based software or AI voice assistants?</p>`;["Never","Less than once per week","A few times per week","About once per day","Several times per day"].forEach(opt=>{html+=`<label><input type="radio" name="aiuse" value="${opt}"> ${opt}</label>`;});html+=`</div>`;
+      html+=`<div class="question-block"><p>What is your attitude towards AI-based software or AI voice assistants?</p><div class="options-horizontal">`;for(let v=1;v<=7;v++){let label="";if(v===1)label="Very negative";if(v===4)label="Neutral";if(v===7)label="Very positive";html+=`<label><input type="radio" name="aiatt" value="${v}"><br>${v}${label?"<br>("+label+")":""}</label>`;}html+=`</div></div>`;
       document.getElementById('demoQuestions').innerHTML=html;
+      document.querySelectorAll('input[name="firstlang"]').forEach(inp=>inp.addEventListener('change',e=>{document.getElementById('otherLangBox').classList.toggle('hidden',e.target.value==="English only");}));
+      document.querySelectorAll('input[name="speech"]').forEach(inp=>inp.addEventListener('change',e=>{document.getElementById('speechDescBox').classList.toggle('hidden',e.target.value!=="Yes");}));
+      document.querySelectorAll('input[name="neuro"]').forEach(inp=>inp.addEventListener('change',e=>{document.getElementById('neuroDescBox').classList.toggle('hidden',e.target.value!=="Yes");}));
       document.getElementById('demoNextBtn').onclick=()=>{demo.classList.add('hidden');feedback.classList.remove('hidden');};
     }
+
     document.getElementById('feedbackNextBtn').addEventListener('click',()=>{feedback.classList.add('hidden');finish.classList.remove('hidden');});
   </script>
 </body>
