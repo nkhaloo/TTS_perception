@@ -6,6 +6,7 @@ This project tests whether people can converge on a perception of race in when p
 The `src` folder contains the following scripts:
 
 `analyze_vowels.R`: Visualizes and analyzes the acoustic data for vowels. 
+
 `random_sample_voices.R`: Radomly samples avaialble TTS voices hosted on Easy-easy AI. 
 
 ## Experiment
