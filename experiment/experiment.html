@@ -8,24 +8,52 @@
     body { font-family: sans-serif; background: #f5f5f5; margin: 0; padding: 20px; }
     .card { background: white; border-radius: 8px; padding: 20px; max-width: 900px; margin: 0 auto; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
     h1 { font-size: 24px; margin-top: 0; }
-    .btn { padding: 10px 16px; border: none; border-radius: 6px; cursor: pointer; }
+    .btn { padding: 10px 16px; border: none; border-radius: 6px; cursor: pointer; margin-right: 8px; }
     .btn-primary { background: #007acc; color: white; }
     .btn-primary:disabled { background: #a0aec0; color: #e2e8f0; cursor: not-allowed; }
+    .btn-secondary { background: #ccc; color: black; }
     .hidden { display: none; }
     .progress { height: 8px; background: #eee; border-radius: 4px; margin: 10px 0; overflow: hidden; }
-    .progress > div { height: 100%; background: #007acc; width: 0; }
-    table { width: 100%; border-collapse: collapse; margin-top: 16px; }
-    th, td { padding: 8px; text-align: center; }
-    td:first-child { text-align: left; }
-    input[type="radio"], input[type="checkbox"] { margin-right: 6px; }
+    .progress > div { height: 100%; background: #007acc; width: 0; transition: width .2s ease; }
     textarea { width: 100%; height: 100px; margin-top: 8px; padding: 6px; border-radius: 4px; border: 1px solid #ccc; font-family: sans-serif; }
 
     .question-block { margin: 20px 0; padding: 12px; background: #f9f9f9; border-radius: 6px; border: 1px solid #ddd; }
     .question-block p { margin: 0 0 8px 0; font-weight: bold; }
-    .question-block label { display: flex; align-items: center; margin: 4px 0; }
 
-    .options-horizontal { display: flex; justify-content: space-between; margin-top: 8px; gap: 10px; }
-    .options-horizontal label { flex: 1; text-align: center; font-size: 14px; flex-direction: column; }
+    /* Slider */
+    input[type="range"] {
+      -webkit-appearance: none;
+      width: 100%;
+      height: 8px;
+      background: #ddd;
+      border-radius: 5px;
+      outline: none;
+      cursor: pointer;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 18px; height: 18px;
+      border-radius: 50%;
+      background: #aaa; /* grey initially */
+      transition: background 0.2s;
+      margin-top: -5px;
+    }
+    input[type="range"].active::-webkit-slider-thumb { background: #007acc; }
+    input[type="range"]::-moz-range-thumb {
+      width: 18px; height: 18px;
+      border-radius: 50%;
+      background: #aaa;
+      transition: background 0.2s;
+    }
+    input[type="range"].active::-moz-range-thumb { background: #007acc; }
+
+    .scale-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: #555;
+      margin-top: 6px;
+    }
   </style>
 </head>
 <body>
@@ -34,16 +62,12 @@
   <div class="card" id="screen-consent">
     <h1>Intro and Consent</h1>
     <p>Thank you so much for participating in our study!</p>
-    <p>
-      Currently, we are working on testing A.I. generated voices for new spoken language models.
-      We are testing voices that were trained on multiple dialects, voices, and genders, so your input
-      about these traits is important for the continued development of voice assistants.
-    </p>
+    <p>Currently, we are working on testing A.I. generated voices for new spoken language models.
+    We are testing voices that were trained on multiple dialects, voices, and genders, so your input
+    about these traits is important for the continued development of voice assistants.</p>
     <p>Please be as honest as possible in your feedback of these voices.</p>
-    <p>
-      Before starting, please read the <a href="#" target="_blank">Informed Consent Form</a>,
-      and then check the box below once you are done reading.
-    </p>
+    <p>Before starting, please read the <a href="#" target="_blank">Informed Consent Form</a>,
+    and then check the box below once you are done reading.</p>
     <label><input type="checkbox" id="consentCheck"> I consent to participate</label>
     <br><br>
     <button class="btn btn-primary" id="consentBtn" disabled>Continue</button>
@@ -52,7 +76,6 @@
   <!-- Audio Check -->
   <div class="card hidden" id="screen-audiocheck">
     <h1>Audio Check</h1>
-    <p>Please ensure that you can hear the audio before beginning. Follow the instructions from the audio before continuing.</p>
     <button class="btn btn-primary" id="playAudioCheckBtn">Play Audio</button>
     <audio id="audioCheckPlayer" src="https://nkhaloo.github.io/AAE_AI/experiment/audio_check/check.mp3"></audio>
     <div class="question-block">
@@ -64,13 +87,11 @@
 
   <!-- Trial Block -->
   <div class="card hidden" id="screen-block">
-    <h1 id="blockTitle"></h1>
     <div class="progress"><div id="progressBar"></div></div>
-    <p>Please press the button to listen to the audio:</p>
-    <button class="btn btn-primary" id="playBtn">Press Play to listen to the audio</button>
-    <!-- Hidden audio element (no controls / no slider) -->
-    <audio id="player" preload="auto" style="display:none;"></audio>
-
+    <p>Please press the button to listen to the audio, then answer the questions below:</p>
+    <button class="btn btn-primary" id="playBtn">Play Audio</button>
+    <button class="btn btn-secondary" id="skipBtn">Skip (Pilot Only)</button>
+    <audio id="player" preload="auto"></audio>
     <div id="questionsContainer"></div>
     <div style="margin-top:12px;">
       <button class="btn btn-primary" id="nextBtn" disabled>Next</button>
@@ -80,23 +101,22 @@
   <!-- Attention Check -->
   <div class="card hidden" id="screen-attncheck">
     <h1>Attention Check</h1>
-    <p>How many 2’s are there in this sequence: <strong>21332262</strong>?</p>
-    <input type="text" id="attnResponse" placeholder="Type your answer here" style="width:200px; padding:6px;">
+    <p id="attnQuestion"></p>
+    <input type="text" id="attnResponse" style="width:240px; padding:6px;">
     <br><br>
     <button class="btn btn-primary" id="attnNextBtn">Continue</button>
   </div>
 
   <!-- Demographics -->
   <div class="card hidden" id="screen-demographics">
-    <h1>Demographics Survey</h1>
+    <h1>Please answer the following questions about yourself</h1>
     <div id="demoQuestions"></div>
-    <button class="btn btn-primary" id="demoNextBtn">Next</button>
+    <button class="btn btn-primary" id="demoNextBtn" disabled>Next</button>
   </div>
 
   <!-- Feedback -->
   <div class="card hidden" id="screen-feedback">
     <h1>Final Feedback</h1>
-    <p>Please describe any thoughts or feedback you have about the voices overall.</p>
     <textarea id="feedbackText"></textarea>
     <button class="btn btn-primary" id="feedbackNextBtn">Submit</button>
   </div>
@@ -110,8 +130,8 @@
   <script>
     const CONFIG = {
       assetsBase: 'https://nkhaloo.github.io/AAE_AI/data/soundfiles',
+      stimuliPersonality: ['passage'],
       stimuliRace: ['central','fronting','mono','raising'],
-      stimuliPersonality: ['passage'], // filenames like BF1_passage.wav
       suffix: '.wav',
       questions: {
         Personality: [
@@ -120,7 +140,8 @@
           "How funny does this speaker sound?",
           "How competent does this speaker sound?",
           "How trustworthy does this speaker sound?",
-          "How pleasant does this speaker sound?"
+          "How pleasant does this speaker sound?",
+          "How human-like was this voice?"
         ],
         Race: [
           { type:"radio-list", text:"What dialect region does the AI voice sound like?", options:["Midwestern U.S.","Northeastern U.S.","Northwestern U.S.","Southeastern U.S.","Southwestern U.S.","Non-American"] },
@@ -129,161 +150,160 @@
           { type:"likert", text:"How feminine or masculine does the AI voice sound?", scaleMin:1, scaleMax:7, labels:{1:"Most feminine",4:"Androgynous",7:"Most masculine"} }
         ]
       },
+      attnChecks: {
+        Personality: {8:"What is the color of the sky on a clear day?",16:"How many 2’s are there in this sequence: 21332262?"},
+        Race: {
+          10:"What letter comes after E in the alphabet?",
+          20:"How many 3’s are in this sequence ‘335637’?",
+          30:"Type the number '15'.",
+          40:"What's 11 + 12?",
+          50:"What are the last 6 letters of the alphabet?",
+          60:"What is 15 + 7?"
+        }
+      },
       bins:['BF','BM','WF','WM'],
-      numsPerBin:8,
-      scaleMin:1,
-      scaleMax:7
+      numsPerBin:8
     };
 
-    function shuffle(arr){ for(let i=arr.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [arr[i],arr[j]]=[arr[j],arr[i]];} return arr;}
+    const State={blocks:{},order:[],currentBlock:null,trialIndex:0,audioFinished:false};
 
-    function buildAllSpeakers(){
-      const s=[];
-      for(const b of CONFIG.bins){ for(let n=1;n<=CONFIG.numsPerBin;n++){ s.push(`${b}${n}`);} }
-      return s;
+    // Consent
+    document.getElementById('consentCheck').addEventListener('change',e=>{
+      document.getElementById('consentBtn').disabled=!e.target.checked;
+    });
+    document.getElementById('consentBtn').addEventListener('click',()=>{
+      document.getElementById('screen-consent').classList.add('hidden');
+      document.getElementById('screen-audiocheck').classList.remove('hidden');
+    });
+
+    // Audio check
+    document.getElementById('playAudioCheckBtn').addEventListener('click',()=>{ document.getElementById('audioCheckPlayer').play(); });
+    document.getElementById('audioCheckResponse').addEventListener('input',e=>{
+      document.getElementById('audioCheckNextBtn').disabled=!e.target.value.trim();
+    });
+    document.getElementById('audioCheckNextBtn').addEventListener('click',()=>{
+      document.getElementById('screen-audiocheck').classList.add('hidden');
+      startExperiment();
+    });
+
+    // Reset answers per trial
+    function resetAnswers(){
+      if(State.currentBlock==="Personality"){
+        document.querySelectorAll('.slider').forEach(sl=>{
+          sl.value=4; sl.dataset.touched="false"; sl.classList.remove('active'); sl.disabled=true;
+        });
+      } else if(State.currentBlock==="Race"){
+        document.querySelectorAll('#questionsContainer input[type=radio]').forEach(inp=>{ inp.checked=false; inp.disabled=true; });
+      }
+      document.getElementById('nextBtn').disabled=true;
     }
 
+    // Helpers
+    function disableInputs(disabled){ document.querySelectorAll('#questionsContainer input').forEach(inp=>inp.disabled=disabled); }
+    function allAnswered(){
+      if(State.currentBlock==="Personality"){
+        return CONFIG.questions.Personality.every((q,i)=>{const sl=document.querySelector(`input[name="q${i}"]`);return sl && sl.dataset.touched==="true";});
+      } else if(State.currentBlock==="Race"){
+        return CONFIG.questions.Race.every((q,i)=>document.querySelector(`input[name="race${i}"]:checked`));
+      }
+      return false;
+    }
+    function updateNextButtonState(){ document.getElementById('nextBtn').disabled=!(State.audioFinished&&allAnswered()); }
+
+    // Build stimuli
+    function buildAllSpeakers(){ const s=[]; for(const b of CONFIG.bins){ for(let n=1;n<=CONFIG.numsPerBin;n++){ s.push(`${b}${n}`);} } return s; }
+    function shuffle(arr){ for(let i=arr.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [arr[i],arr[j]]=[arr[j],arr[i]];} return arr;}
     function sampleSpeakersPerBlock(allSpeakers){
       const speakersByBin = Object.fromEntries(CONFIG.bins.map(b=>[b,[]]));
       for(const s of allSpeakers){ const bin = s.replace(/\d+$/,''); speakersByBin[bin].push(s); }
       for(const b of CONFIG.bins) shuffle(speakersByBin[b]);
-      const personality = [], race = [];
+      const personality=[],race=[];
       for(const b of CONFIG.bins){ personality.push(...speakersByBin[b].slice(0,4)); race.push(...speakersByBin[b].slice(4,8)); }
-      return {personality, race};
+      return {personality,race};
     }
-
     function buildBlockTrials(speakers, stimuliList, blockName){
-      const t=[];
-      for(const sp of speakers){
-        for(const st of stimuliList){
-          const folder = (st === 'passage') ? 'passages' : st; // passage -> /passages/, others unchanged
-          const url = `${CONFIG.assetsBase}/${folder}/${sp}_${st}${CONFIG.suffix}`;
-          t.push({block:blockName, speaker:sp, bin:sp.replace(/\d+$/,''), stimulus:st, url:url});
-        }
-      }
-      return shuffle(t);
+      const t=[]; for(const sp of speakers){ for(const st of stimuliList){
+        const folder=(st==='passage')?'passages':st;
+        t.push({block:blockName,speaker:sp,stimulus:st,url:`${CONFIG.assetsBase}/${folder}/${sp}_${st}${CONFIG.suffix}`});
+      }} return shuffle(t);
     }
 
-    const State={blocks:{},order:[],currentBlock:null,trialIndex:0};
+    // Start experiment
+    function startExperiment(){
+      const speakers=buildAllSpeakers();
+      const {personality,race}=sampleSpeakersPerBlock(speakers);
+      State.blocks={Personality:buildBlockTrials(personality,CONFIG.stimuliPersonality,'Personality'),Race:buildBlockTrials(race,CONFIG.stimuliRace,'Race')};
+      State.order=['Personality','Race']; renderBlock('Personality');
+    }
 
-    const consent=document.getElementById('screen-consent');
-    const audioCheck=document.getElementById('screen-audiocheck');
     const block=document.getElementById('screen-block');
-    const attn=document.getElementById('screen-attncheck');
-    const demo=document.getElementById('screen-demographics');
-    const feedback=document.getElementById('screen-feedback');
-    const finish=document.getElementById('screen-finish');
-    const blockTitle=document.getElementById('blockTitle');
     const progressBar=document.getElementById('progressBar');
     const player=document.getElementById('player');
     const playBtn=document.getElementById('playBtn');
+    const skipBtn=document.getElementById('skipBtn');
     const questionsContainer=document.getElementById('questionsContainer');
     const nextBtn=document.getElementById('nextBtn');
 
-    const consentCheck = document.getElementById('consentCheck');
-    const consentBtn = document.getElementById('consentBtn');
-
-    consentCheck.addEventListener('change', ()=>{ consentBtn.disabled = !consentCheck.checked; });
-    consentBtn.addEventListener('click', ()=>{ if(!consentCheck.checked){ alert("You must consent before continuing."); return;} consent.classList.add('hidden'); audioCheck.classList.remove('hidden'); });
-
-    document.getElementById('playAudioCheckBtn').addEventListener('click',()=>{ document.getElementById('audioCheckPlayer').play(); });
-    document.getElementById('audioCheckResponse').addEventListener('input',e=>{ document.getElementById('audioCheckNextBtn').disabled=!e.target.value.trim(); });
-    document.getElementById('audioCheckNextBtn').addEventListener('click',()=>{ audioCheck.classList.add('hidden'); startExperiment(); });
-
-    function startExperiment(){
-      const speakers=buildAllSpeakers();
-      const {personality, race}=sampleSpeakersPerBlock(speakers);
-      State.blocks={ Personality: buildBlockTrials(personality, CONFIG.stimuliPersonality, 'Personality'), Race: buildBlockTrials(race, CONFIG.stimuliRace, 'Race') };
-      State.order=['Personality','Race'];
-      renderBlock(State.order[0]);
-    }
-
     function renderBlock(bn){
-      State.currentBlock=bn;
-      State.trialIndex=0;
-      renderQuestions(bn);
-      blockTitle.textContent=""; // no title shown
-      block.classList.remove('hidden');
-      updateTrialUI();
-      nextBtn.onclick=handleNext;
+      State.currentBlock=bn; State.trialIndex=0;
+      renderQuestions(bn); block.classList.remove('hidden'); updateTrialUI();
+      nextBtn.onclick=handleNext; skipBtn.onclick=handleNext;
     }
-
     function currentTrials(){return State.blocks[State.currentBlock];}
     function currentTrial(){return currentTrials()[State.trialIndex];}
 
     function renderQuestions(bn){
-      if(bn==="Personality"){ let html='<table><tr><th></th>';
-        for(let v=CONFIG.scaleMin;v<=CONFIG.scaleMax;v++){ if(v===CONFIG.scaleMin){html+=`<th>${v}<br><small>Least</small></th>`;} else if(v===CONFIG.scaleMax){html+=`<th>${v}<br><small>Most</small></th>`;} else{html+=`<th>${v}</th>`;} }
-        html+='</tr>'; CONFIG.questions.Personality.forEach((q,i)=>{ html+=`<tr><td>${q}</td>`; for(let v=CONFIG.scaleMin;v<=CONFIG.scaleMax;v++){ const id=`q${i}_${v}`; html+=`<td><input type="radio" name="q${i}" value="${v}" id="${id}"></td>`;} html+='</tr>';}); html+='</table>'; questionsContainer.innerHTML=html; }
-      else if(bn==="Race"){ let html=''; CONFIG.questions.Race.forEach((q,i)=>{ if(q.type==="radio-list"){ html+=`<div class="question-block"><p>${q.text}</p><div class="options-vertical">`; q.options.forEach((opt,j)=>{ const id=`race${i}_${j}`; html+=`<label><input type="radio" name="race${i}" value="${opt}" id="${id}"> ${opt}</label>`;}); html+='</div></div>'; }
-        else if(q.type==="likert"){ html+=`<div class="question-block"><p>${q.text}</p><div class="options-horizontal">`; for(let v=q.scaleMin;v<=q.scaleMax;v++){ const label=q.labels&&q.labels[v]?q.labels[v]:v; const id=`race${i}_${v}`; html+=`<label><input type="radio" name="race${i}" value="${v}" id="${id}"><br>${label}</label>`;} html+='</div></div>'; }}); questionsContainer.innerHTML=html; }
-      document.querySelectorAll('input[type=radio]').forEach(inp=>inp.addEventListener('change',()=>nextBtn.disabled=!allAnswered(bn)));
+      if(bn==="Personality"){
+        let html=""; CONFIG.questions.Personality.forEach((q,i)=>{
+          html+=`<div class="question-block"><p>${q}</p>
+            <input type="range" min="1" max="7" step="1" value="4"
+            class="slider" name="q${i}" data-touched="false" disabled>
+            <div class="scale-labels"><span>1<br>(Least)</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7<br>(Most)</span></div>
+          </div>`;});
+        questionsContainer.innerHTML=html;
+        document.querySelectorAll('.slider').forEach(sl=>{
+          sl.addEventListener('input',()=>{ sl.dataset.touched="true"; sl.classList.add('active'); updateNextButtonState(); });
+        });
+      }
+      else if(bn==="Race"){
+        let html=''; CONFIG.questions.Race.forEach((q,i)=>{
+          if(q.type==="radio-list"){ html+=`<div class="question-block"><p>${q.text}</p>`; q.options.forEach(opt=>{ html+=`<label><input type="radio" name="race${i}" value="${opt}" disabled> ${opt}</label>`; }); html+='</div>'; }
+          else if(q.type==="likert"){ html+=`<div class="question-block"><p>${q.text}</p>`; for(let v=q.scaleMin;v<=q.scaleMax;v++){ const label=q.labels&&q.labels[v]?q.labels[v]:v; html+=`<label><input type="radio" name="race${i}" value="${v}" disabled> ${label}</label>`; } html+='</div>'; }
+        }); questionsContainer.innerHTML=html;
+        document.querySelectorAll('#questionsContainer input[type=radio]').forEach(inp=>{ inp.addEventListener('change',updateNextButtonState); });
+      }
+      resetAnswers();
     }
 
-    function allAnswered(bn){ if(bn==="Personality"){ return CONFIG.questions.Personality.every((q,i)=>document.querySelector(`input[name="q${i}"]:checked`)); } else if(bn==="Race"){ return CONFIG.questions.Race.every((q,i)=>document.querySelector(`input[name="race${i}"]:checked`)); } return false; }
-    function clearAnswers(){ document.querySelectorAll('input[type="radio"]').forEach(inp=>inp.checked=false); nextBtn.disabled=true; }
-
     function updateTrialUI(){
-      const t=currentTrial();
-      const total=currentTrials().length;
-      progressBar.style.width=`${((State.trialIndex)/total)*100}%`;
-
-      // Prepare audio & UI
-      player.src=t.url;
-      player.currentTime = 0;
-      clearAnswers();
-      document.querySelectorAll('#questionsContainer input').forEach(inp=>inp.disabled=true);
-
-      // Configure Play button behavior (no slider shown anywhere)
-      playBtn.disabled = false;
-      playBtn.textContent = 'Press Play to listen to the audio';
-      playBtn.onclick = async () => {
-        try {
-          playBtn.disabled = true;
-          playBtn.textContent = 'Playing...';
-          player.currentTime = 0; // ensure from start
-          await player.play();
-        } catch (e) {
-          // If autoplay policy or error occurs, re-enable so participant can try again
-          playBtn.disabled = false;
-          playBtn.textContent = 'Press Play to listen to the audio';
-          console.error(e);
-        }
-      };
-
-      // When audio finishes, unlock questions and allow replay if desired
-      player.onended = () => {
-        document.querySelectorAll('#questionsContainer input').forEach(inp=>inp.disabled=false);
-        playBtn.disabled = false;
-        playBtn.textContent = 'Replay audio';
-      };
+      const t=currentTrial(), total=currentTrials().length;
+      progressBar.style.width=`${(State.trialIndex/total)*100}%`;
+      player.src=t.url; player.currentTime=0; State.audioFinished=false; resetAnswers();
+      playBtn.disabled=false; playBtn.textContent='Play Audio';
+      playBtn.onclick=async()=>{ try{ playBtn.disabled=true; playBtn.textContent='Playing...'; await player.play(); }catch(e){} };
+      player.onended=()=>{ State.audioFinished=true; disableInputs(false); playBtn.disabled=false; playBtn.textContent='Replay Audio'; updateNextButtonState(); };
     }
 
     function handleNext(){
       State.trialIndex++;
-      if(State.trialIndex<currentTrials().length) updateTrialUI();
-      else {
-        const idx=State.order.indexOf(State.currentBlock);
-        if(idx===0){
-          block.classList.add('hidden');
-          attn.classList.remove('hidden');
-        } else {
-          block.classList.add('hidden');
-          renderDemographics();
-        }
+      const checks=CONFIG.attnChecks[State.currentBlock];
+      if(checks && checks[State.trialIndex]){
+        block.classList.add('hidden');
+        document.getElementById('screen-attncheck').classList.remove('hidden');
+        document.getElementById('attnQuestion').textContent=checks[State.trialIndex];
+        document.getElementById('attnResponse').value="";
+        document.getElementById('attnNextBtn').onclick=()=>{ document.getElementById('screen-attncheck').classList.add('hidden'); block.classList.remove('hidden'); updateTrialUI(); };
+        return;
       }
+      if(State.trialIndex<currentTrials().length){ updateTrialUI(); }
+      else{ const idx=State.order.indexOf(State.currentBlock); if(idx===0){ renderBlock('Race'); } else{ block.classList.add('hidden'); renderDemographics(); } }
     }
 
-    document.getElementById('attnNextBtn').addEventListener('click',()=>{
-      const resp=document.getElementById('attnResponse').value.trim();
-      if(!resp){alert("Please enter an answer before continuing.");return;}
-      attn.classList.add('hidden');
-      renderBlock('Race');
-    });
-
+    // Demographics
     function renderDemographics(){
+      const demo=document.getElementById('screen-demographics');
       demo.classList.remove('hidden');
-      let html='';
+      let html="";
       html+=`<div class="question-block"><p>Please select your age range.</p>`;
       ["18–24","25–34","35–44","45–54","55+"].forEach(opt=>{html+=`<label><input type="radio" name="age" value="${opt}"> ${opt}</label>`;});html+=`</div>`;
       html+=`<div class="question-block"><p>Which race/ethnicities do you most strongly identify with? (Check all that apply)</p>`;
@@ -305,37 +325,59 @@
       ["ChatGPT Voice Assistant","Google Gemini Voice","Amazon Alexa","Apple Siri","Microsoft Cortana","Voice-based navigation apps","Other text-to-speech software","None of the above"].forEach(opt=>{html+=`<label><input type="checkbox" name="tech" value="${opt}"> ${opt}</label>`;});html+=`</div>`;
       html+=`<div class="question-block"><p>How often do you use AI-based software or AI voice assistants?</p>`;
       ["Never","Less than once per week","A few times per week","About once per day","Several times per day"].forEach(opt=>{html+=`<label><input type="radio" name="aiuse" value="${opt}"> ${opt}</label>`;});html+=`</div>`;
-      html+=`<div class="question-block"><p>What is your attitude towards AI-based software or AI voice assistants?</p><div class="options-horizontal">`;
-      for(let v=1;v<=7;v++){
-        let label="";
-        if(v===1)label="Very negative";
-        if(v===4)label="Neutral";
-        if(v===7)label="Very positive";
-        html+=`<label><input type="radio" name="aiatt" value="${v}"><br>${v}${label?"<br>("+label+")":""}</label>`;
-      }
-      html+=`</div></div>`;
+      html+=`<div class="question-block"><p>What is your attitude towards AI-based software or AI voice assistants?</p>`;
+      for(let v=1;v<=7;v++){ let label=""; if(v===1)label="Very negative"; if(v===4)label="Neutral"; if(v===7)label="Very positive"; html+=`<label><input type="radio" name="aiatt" value="${v}"> ${v} ${label}</label>`; }
+      html+=`</div>`;
       document.getElementById('demoQuestions').innerHTML=html;
 
-      document.querySelectorAll('input[name="firstlang"]').forEach(inp=>inp.addEventListener('change',e=>{
-        document.getElementById('otherLangBox').classList.toggle('hidden',e.target.value==="English only");
-      }));
-      document.querySelectorAll('input[name="speech"]').forEach(inp=>inp.addEventListener('change',e=>{
-        document.getElementById('speechDescBox').classList.toggle('hidden',e.target.value!=="Yes");
-      }));
-      document.querySelectorAll('input[name="neuro"]').forEach(inp=>inp.addEventListener('change',e=>{
-        document.getElementById('neuroDescBox').classList.toggle('hidden',e.target.value!=="Yes");
-      }));
+      // Show/hide conditional fields
+      document.querySelectorAll('input[name="firstlang"]').forEach(inp=>{
+        inp.addEventListener('change', e=>{
+          document.getElementById('otherLangBox').classList.toggle('hidden', e.target.value==="English only");
+          updateDemoNext();
+        });
+      });
+      document.querySelectorAll('input[name="speech"]').forEach(inp=>{
+        inp.addEventListener('change', e=>{
+          document.getElementById('speechDescBox').classList.toggle('hidden', e.target.value!=="Yes");
+          updateDemoNext();
+        });
+      });
+      document.querySelectorAll('input[name="neuro"]').forEach(inp=>{
+        inp.addEventListener('change', e=>{
+          document.getElementById('neuroDescBox').classList.toggle('hidden', e.target.value!=="Yes");
+          updateDemoNext();
+        });
+      });
 
-      document.getElementById('demoNextBtn').onclick=()=>{
-        demo.classList.add('hidden');
-        feedback.classList.remove('hidden');
-      };
+      // Validation
+      function allDemoAnswered(){
+        const age=document.querySelector('input[name="age"]:checked');
+        const ethnicity=document.querySelectorAll('input[name="ethnicity"]:checked').length>0;
+        const dialect=document.querySelector('input[name="dialect"]:checked');
+        const gender=document.querySelector('input[name="gender"]:checked');
+        const firstlang=document.querySelector('input[name="firstlang"]:checked');
+        const speech=document.querySelector('input[name="speech"]:checked');
+        const neuro=document.querySelector('input[name="neuro"]:checked');
+        const tech=document.querySelectorAll('input[name="tech"]:checked').length>0;
+        const aiuse=document.querySelector('input[name="aiuse"]:checked');
+        const aiatt=document.querySelector('input[name="aiatt"]:checked');
+        if(!age||!ethnicity||!dialect||!gender||!firstlang||!speech||!neuro||!tech||!aiuse||!aiatt) return false;
+        if(firstlang.value!=="English only" && !document.getElementById("otherLangText").value.trim()) return false;
+        if(speech.value==="Yes" && !document.getElementById("speechDescText").value.trim()) return false;
+        if(neuro.value==="Yes" && !document.getElementById("neuroDescText").value.trim()) return false;
+        return true;
+      }
+      function updateDemoNext(){ document.getElementById("demoNextBtn").disabled=!allDemoAnswered(); }
+      document.querySelectorAll('#demoQuestions input, #demoQuestions textarea').forEach(el=>{
+        el.addEventListener('input', updateDemoNext);
+        el.addEventListener('change', updateDemoNext);
+      });
+      document.getElementById("demoNextBtn").disabled=true;
+      document.getElementById('demoNextBtn').onclick=()=>{ demo.classList.add('hidden'); document.getElementById('screen-feedback').classList.remove('hidden'); };
     }
 
-    document.getElementById('feedbackNextBtn').addEventListener('click',()=>{
-      feedback.classList.add('hidden');
-      finish.classList.remove('hidden');
-    });
+    document.getElementById('feedbackNextBtn').addEventListener('click',()=>{ document.getElementById('screen-feedback').classList.add('hidden'); document.getElementById('screen-finish').classList.remove('hidden'); });
   </script>
 </body>
 </html>
