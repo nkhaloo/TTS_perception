@@ -114,6 +114,11 @@ input[type="range"].active::-moz-range-thumb { background: #007bff; }
   color: #555;
   margin-top: 6px;
 }
+.scale-labels span {
+  flex: 1;
+  text-align: center;
+  white-space: nowrap;
+}
 </style>
 </head>
 <body>
@@ -178,7 +183,6 @@ input[type="range"].active::-moz-range-thumb { background: #007bff; }
 </div>
 
 <script>
-/* Utility */
 function setSliderBackground(slider){
   if(!slider.classList.contains('active')){slider.style.background='#ddd';return;}
   const min=Number(slider.min),max=Number(slider.max),val=Number(slider.value);
@@ -186,7 +190,6 @@ function setSliderBackground(slider){
   slider.style.background=`linear-gradient(to right,#007bff 0%,#007bff ${percent}%,#ddd ${percent}%,#ddd 100%)`;
 }
 
-/* Config */
 const CONFIG={
   assetsBase:'https://nkhaloo.github.io/AAE_AI/data/soundfiles',
   stimuliPersonality:['passage'],
@@ -206,7 +209,7 @@ const CONFIG={
       {type:"radio-list",text:"What dialect region does the AI voice sound like?",options:["Midwestern U.S.","Northeastern U.S.","Northwestern U.S.","Southeastern U.S.","Southwestern U.S.","Non-American"]},
       {type:"radio-list",text:"What race does the AI voice sound like?",options:["Asian","Black","Latino/Hispanic","White"]},
       {type:"radio-list",text:"How old does the AI voice sound?",options:["18–24","25–34","35–44","45–54","55+"]},
-      {type:"likert",text:"How feminine or masculine does the AI voice sound?",scaleMin:1,scaleMax:7,labels:{1:"Most feminine",4:"Androgynous",7:"Most masculine"}}
+      {type:"likert",text:"How feminine or masculine does the AI voice sound?",scaleMin:1,scaleMax:7}
     ]
   },
   attnChecks:{Personality:{8:"What is the color of the sky on a clear day?",16:"How many 2’s are there in this sequence: 21332262?"}},
@@ -216,7 +219,6 @@ const CONFIG={
 
 const State={blocks:{},order:[],currentBlock:null,trialIndex:0,audioFinished:false};
 
-/* Consent */
 document.getElementById('consentCheck').onchange=e=>{
   document.getElementById('consentBtn').disabled=!e.target.checked;
 };
@@ -225,7 +227,6 @@ document.getElementById('consentBtn').onclick=()=>{
   document.getElementById('screen-audiocheck').classList.remove('hidden');
 };
 
-/* Audio Check */
 document.getElementById('playAudioCheckBtn').onclick=()=>document.getElementById('audioCheckPlayer').play();
 document.getElementById('audioCheckResponse').oninput=e=>{
   document.getElementById('audioCheckNextBtn').disabled=!e.target.value.trim();
@@ -235,7 +236,6 @@ document.getElementById('audioCheckNextBtn').onclick=()=>{
   startExperiment();
 };
 
-/* Helper */
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
 function buildAllSpeakers(){const s=[];for(const b of CONFIG.bins){for(let n=1;n<=CONFIG.numsPerBin;n++){s.push(`${b}${n}`);}}return s;}
 function sampleSpeakersPerBlock(all){
@@ -252,8 +252,6 @@ function buildBlockTrials(speakers,stimuliList,blockName){
     out.push({block:blockName,speaker:sp,stimulus:st,url:`${CONFIG.assetsBase}/${folder}/${sp}_${st}${CONFIG.suffix}`});
   }}return shuffle(out);
 }
-
-/* Experiment */
 function startExperiment(){
   const all=buildAllSpeakers();
   const {personality,race}=sampleSpeakersPerBlock(all);
@@ -272,49 +270,61 @@ const playBtn=document.getElementById('playBtn');
 const nextBtn=document.getElementById('nextBtn');
 const questionsContainer=document.getElementById('questionsContainer');
 
-function disableInputs(disabled){document.querySelectorAll('#questionsContainer input').forEach(inp=>inp.disabled=disabled);}
-function allAnswered(){
-  if(State.currentBlock==="Personality")return Array.from(document.querySelectorAll('.slider')).every(sl=>sl.dataset.touched==="true");
-  if(State.currentBlock==="Race")return Array.from(document.querySelectorAll('.question-block')).every(b=>b.querySelector('input:checked'));
-  return false;
-}
-function updateNextButtonState(){nextBtn.disabled=!(State.audioFinished&&allAnswered());}
-
 function renderQuestions(blockName){
   questionsContainer.innerHTML='';
   if(blockName==="Personality"){
     shuffle(CONFIG.questions.Personality).forEach(q=>{
-      const div=document.createElement('div');div.className='question-block';
-      div.innerHTML=`<p>${q}</p><input type="range" min="1" max="7" value="4" class="slider" data-touched="false" disabled>
-      <div class="scale-labels"><span>1<br>(Least)</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7<br>(Most)</span></div>`;
+      const div=document.createElement('div');
+      div.className='question-block';
+      div.innerHTML=`<p>${q}</p><input type="range" min="1" max="7" step="any" value="4" class="slider" data-touched="false" disabled>
+      <div class="scale-labels"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span></div>`;
       questionsContainer.appendChild(div);
-    });
-    document.querySelectorAll('.slider').forEach(sl=>{
-      setSliderBackground(sl);
-      sl.oninput=()=>{sl.dataset.touched="true";sl.classList.add('active');setSliderBackground(sl);updateNextButtonState();};
     });
   } else {
     shuffle(CONFIG.questions.Race).forEach((q,i)=>{
-      const div=document.createElement('div');div.className='question-block';let html=`<p>${q.text}</p>`;
-      if(q.type==="radio-list"){q.options.forEach(opt=>html+=`<label><input type="radio" name="r${i}" value="${opt}" disabled> ${opt}</label>`);}
-      else if(q.type==="likert"){for(let v=q.scaleMin;v<=q.scaleMax;v++){const lab=q.labels[v]||v;html+=`<label><input type="radio" name="r${i}" value="${v}" disabled> ${lab}</label>`;}}
-      div.innerHTML=html;questionsContainer.appendChild(div);
+      const div=document.createElement('div');
+      div.className='question-block';
+      let html=`<p>${q.text}</p>`;
+      if(q.type==="radio-list"){
+        q.options.forEach(opt=>html+=`<label><input type="radio" name="r${i}" value="${opt}" disabled> ${opt}</label>`);
+      } else if(q.type==="likert" && q.text.includes("feminine or masculine")){
+        html+=`<input type="range" min="1" max="7" step="any" value="4" class="slider" data-touched="false" disabled>
+        <div class="scale-labels">
+          <span><div>1</div><div style="font-size:11px">Most Feminine</div></span>
+          <span>2</span><span>3</span><span>4</span><span>5</span><span>6</span>
+          <span><div>7</div><div style="font-size:11px">Most Masculine</div></span>
+        </div>`;
+      }
+      div.innerHTML=html;
+      questionsContainer.appendChild(div);
     });
-    document.querySelectorAll('input[type=radio]').forEach(inp=>inp.onchange=updateNextButtonState);
   }
+  document.querySelectorAll('.slider').forEach(sl=>{
+    setSliderBackground(sl);
+    sl.oninput=()=>{sl.dataset.touched="true";sl.classList.add('active');setSliderBackground(sl);updateNextButtonState();};
+  });
+  document.querySelectorAll('input[type=radio]').forEach(inp=>inp.onchange=updateNextButtonState);
 }
 
-function resetAnswers(){
-  document.querySelectorAll('.slider').forEach(sl=>{sl.value=4;sl.dataset.touched="false";sl.disabled=true;setSliderBackground(sl);});
-  document.querySelectorAll('input[type=radio]').forEach(r=>{r.checked=false;r.disabled=true;});
-  nextBtn.disabled=true;
+function disableInputs(disabled){document.querySelectorAll('#questionsContainer input').forEach(inp=>inp.disabled=disabled);}
+function allAnswered(){
+  if(State.currentBlock==="Personality")return Array.from(document.querySelectorAll('.slider')).every(sl=>sl.dataset.touched==="true");
+  if(State.currentBlock==="Race"){
+    const sliders=Array.from(document.querySelectorAll('.slider'));
+    const radios=Array.from(document.querySelectorAll('input[type=radio]'));
+    const sliderOK=sliders.length===0||sliders.every(sl=>sl.dataset.touched==="true");
+    const radioOK=radios.length===0||Array.from(document.querySelectorAll('.question-block')).every(b=>b.querySelector('input:checked'));
+    return sliderOK&&radioOK;
+  }
+  return false;
 }
-
+function updateNextButtonState(){nextBtn.disabled=!(State.audioFinished&&allAnswered());}
+function resetAnswers(){document.querySelectorAll('.slider').forEach(sl=>{sl.value=4;sl.dataset.touched="false";sl.disabled=true;setSliderBackground(sl);});document.querySelectorAll('input[type=radio]').forEach(r=>{r.checked=false;r.disabled=true;});nextBtn.disabled=true;}
 function currentTrials(){return State.blocks[State.currentBlock];}
 function currentTrial(){return currentTrials()[State.trialIndex];}
 
 function updateTrialUI(){
-  const t=currentTrial();const total=currentTrials().length;
+  const t=currentTrial(),total=currentTrials().length;
   progressBar.style.width=`${(State.trialIndex/total)*100}%`;
   renderQuestions(State.currentBlock);
   player.src=t.url;player.currentTime=0;State.audioFinished=false;resetAnswers();
@@ -324,23 +334,16 @@ function updateTrialUI(){
 }
 
 function renderBlock(name){
-  State.currentBlock=name;
-  State.trialIndex=0;
-  block.classList.remove('hidden');
-  updateTrialUI();
-
+  State.currentBlock=name;State.trialIndex=0;
+  block.classList.remove('hidden');updateTrialUI();
   nextBtn.onclick=handleNext;
-
-  // ✅ Skip button now works
-  const skipBtn=document.getElementById('skipBtn');
-  skipBtn.onclick=()=>{State.audioFinished=true;handleNext();};
+  document.getElementById('skipBtn').onclick=()=>{State.audioFinished=true;handleNext();};
 }
 
 function handleNext(){
   const checks=CONFIG.attnChecks[State.currentBlock];
   State.trialIndex++;
-
-  if(State.currentBlock==="Personality" && checks && checks[State.trialIndex]){
+  if(State.currentBlock==="Personality"&&checks&&checks[State.trialIndex]){
     block.classList.add('hidden');
     const attn=document.getElementById('screen-attncheck');
     attn.classList.remove('hidden');
@@ -356,7 +359,6 @@ function handleNext(){
     };
     return;
   }
-
   if(State.trialIndex<currentTrials().length){updateTrialUI();}
   else{
     const idx=State.order.indexOf(State.currentBlock);
