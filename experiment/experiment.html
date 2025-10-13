@@ -19,10 +19,7 @@ body {
   margin: 0 auto;
   box-shadow: 0 2px 6px rgba(0,0,0,0.1);
 }
-h1 {
-  font-size: 24px;
-  margin-top: 0;
-}
+h1 { font-size: 24px; margin-top: 0; }
 .btn {
   padding: 10px 16px;
   border: none;
@@ -30,19 +27,13 @@ h1 {
   cursor: pointer;
   margin-right: 8px;
 }
-.btn-primary {
-  background: #007acc;
-  color: white;
-}
+.btn-primary { background: #007acc; color: white; }
 .btn-primary:disabled {
   background: #a0aec0;
   color: #e2e8f0;
   cursor: not-allowed;
 }
-.btn-secondary {
-  background: #ccc;
-  color: black;
-}
+.btn-secondary { background: #ccc; color: black; }
 .hidden { display: none; }
 .progress {
   height: 8px;
@@ -93,8 +84,7 @@ input[type="range"] {
 }
 input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;
-  width: 18px;
-  height: 18px;
+  width: 18px; height: 18px;
   border-radius: 50%;
   background: #aaa;
   cursor: pointer;
@@ -126,10 +116,10 @@ input[type="range"].active::-moz-range-thumb { background: #007bff; }
 <!-- Consent -->
 <div class="card" id="screen-consent">
   <h1>Intro and Consent</h1>
-  <p>Thank you so much for participating in our study!</p>
+  <p>Thank you for participating!</p>
   <p>We are testing A.I. generated voices trained on multiple dialects, voices, and genders, so your input about these traits is important for the continued development of voice assistants.</p>
-  <p>Please be as honest as possible in your feedback of these voices.</p>
-  <p>Before starting, please read the <a href="#" target="_blank">Informed Consent Form</a>, and then check the box below once you are done reading.</p>
+  <p>This experiment will be somewhat repetitive — please pay close attention to each trial.</p>
+  <p>Before starting, please read the <a href="#" target="_blank">Informed Consent Form</a>, then check the box below once done.</p>
   <label><input type="checkbox" id="consentCheck"> I consent to participate</label>
   <br><br>
   <button class="btn btn-primary" id="consentBtn" disabled>Continue</button>
@@ -167,6 +157,13 @@ input[type="range"].active::-moz-range-thumb { background: #007bff; }
   <input type="text" id="attnResponse" style="width:240px; padding:6px;">
   <br><br>
   <button class="btn btn-primary" id="attnNextBtn" disabled>Continue</button>
+</div>
+
+<!-- Demographics -->
+<div class="card hidden" id="screen-demographics">
+  <h1>Please answer the following questions about yourself</h1>
+  <div id="demoQuestions"></div>
+  <button class="btn btn-primary" id="demoNextBtn" disabled>Next</button>
 </div>
 
 <!-- Feedback -->
@@ -287,13 +284,9 @@ function renderQuestions(blockName){
       let html=`<p>${q.text}</p>`;
       if(q.type==="radio-list"){
         q.options.forEach(opt=>html+=`<label><input type="radio" name="r${i}" value="${opt}" disabled> ${opt}</label>`);
-      } else if(q.type==="likert" && q.text.includes("feminine or masculine")){
+      } else if(q.type==="likert"){
         html+=`<input type="range" min="1" max="7" step="any" value="4" class="slider" data-touched="false" disabled>
-        <div class="scale-labels">
-          <span><div>1</div><div style="font-size:11px">Most Feminine</div></span>
-          <span>2</span><span>3</span><span>4</span><span>5</span><span>6</span>
-          <span><div>7</div><div style="font-size:11px">Most Masculine</div></span>
-        </div>`;
+        <div class="scale-labels"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span></div>`;
       }
       div.innerHTML=html;
       questionsContainer.appendChild(div);
@@ -363,8 +356,83 @@ function handleNext(){
   else{
     const idx=State.order.indexOf(State.currentBlock);
     if(idx===0){renderBlock('Race');}
-    else{block.classList.add('hidden');document.getElementById('screen-feedback').classList.remove('hidden');}
+    else{
+      block.classList.add('hidden');
+      renderDemographics();
+    }
   }
+}
+
+/* Demographics */
+function renderDemographics(){
+  const demo=document.getElementById('screen-demographics');
+  demo.classList.remove('hidden');
+  let html="";
+  html+=`<div class="question-block"><p>Please select your age range.</p>`;
+  ["18–24","25–34","35–44","45–54","55+"].forEach(opt=>{html+=`<label><input type="radio" name="age" value="${opt}"> ${opt}</label>`;});
+  html+=`</div>`;
+  html+=`<div class="question-block"><p>Which race/ethnicities do you most strongly identify with? (Check all that apply)</p>`;
+  ["Asian American","Black American","Hispanic/Latino American","White American","Native American or other Indigenous culture","Other"].forEach(opt=>{html+=`<label><input type="checkbox" name="ethnicity" value="${opt}"> ${opt}</label>`;});
+  html+=`</div>`;
+  html+=`<div class="question-block"><p>What regional dialect do you believe is closest to the way you speak?</p>`;
+  ["Midwestern U.S.","Northeastern U.S.","Northwestern U.S.","Southeastern U.S.","Southwestern U.S."].forEach(opt=>{html+=`<label><input type="radio" name="dialect" value="${opt}"> ${opt}</label>`;});
+  html+=`</div>`;
+  html+=`<div class="question-block"><p>What is your gender?</p>`;
+  ["Male","Female","Non-binary"].forEach(opt=>{html+=`<label><input type="radio" name="gender" value="${opt}"> ${opt}</label>`;});
+  html+=`</div>`;
+  html+=`<div class="question-block"><p>What is/are your first language(s)?</p>`;
+  ["English only","English and another language","Another language only"].forEach(opt=>{html+=`<label><input type="radio" name="firstlang" value="${opt}"> ${opt}</label>`;});
+  html+=`<div id="otherLangBox" class="hidden"><p>Please enter the language(s) besides English that you grew up speaking:</p><textarea id="otherLangText"></textarea></div></div>`;
+  html+=`<div class="question-block"><p>Do you have any speech or hearing disorders?</p>`;
+  ["No","Yes"].forEach(opt=>{html+=`<label><input type="radio" name="speech" value="${opt}"> ${opt}</label>`;});
+  html+=`<div id="speechDescBox" class="hidden"><p>Please briefly describe the speech or hearing disorder:</p><textarea id="speechDescText"></textarea></div></div>`;
+  html+=`<div class="question-block"><p>Have you been diagnosed as neurodivergent by a medical professional?</p>`;
+  ["No","Yes"].forEach(opt=>{html+=`<label><input type="radio" name="neuro" value="${opt}"> ${opt}</label>`;});
+  html+=`<div id="neuroDescBox" class="hidden"><p>Please briefly state what kind of neurodivergence you have been diagnosed with:</p><textarea id="neuroDescText"></textarea></div></div>`;
+  html+=`<div class="question-block"><p>Which technologies do you use regularly?</p>`;
+  ["ChatGPT Voice Assistant","Google Gemini Voice","Amazon Alexa","Apple Siri","Microsoft Cortana","Voice-based navigation apps","Other text-to-speech software","None of the above"].forEach(opt=>{html+=`<label><input type="checkbox" name="tech" value="${opt}"> ${opt}</label>`;});
+  html+=`</div>`;
+  html+=`<div class="question-block"><p>How often do you use AI-based software or AI voice assistants?</p>`;
+  ["Never","Less than once per week","A few times per week","About once per day","Several times per day"].forEach(opt=>{html+=`<label><input type="radio" name="aiuse" value="${opt}"> ${opt}</label>`;});
+  html+=`</div>`;
+  html+=`<div class="question-block"><p>What is your attitude towards AI-based software or AI voice assistants?</p>`;
+  for(let v=1;v<=7;v++){let label="";if(v===1)label="Very negative";if(v===4)label="Neutral";if(v===7)label="Very positive";html+=`<label><input type="radio" name="aiatt" value="${v}"> ${v} ${label}</label>`;}
+  html+=`</div>`;
+  document.getElementById('demoQuestions').innerHTML=html;
+  const btn=document.getElementById('demoNextBtn');
+  function toggleConditional(name,val,box){
+    document.querySelectorAll(`input[name="${name}"]`).forEach(inp=>inp.addEventListener('change',()=>{
+      const b=document.getElementById(box);
+      if(inp.checked&&inp.value===val){b.classList.remove('hidden');}
+      else if(inp.checked){b.classList.add('hidden');b.querySelector('textarea').value="";}
+      updateBtn();
+    }));
+  }
+  toggleConditional('firstlang','English and another language','otherLangBox');
+  toggleConditional('firstlang','Another language only','otherLangBox');
+  toggleConditional('speech','Yes','speechDescBox');
+  toggleConditional('neuro','Yes','neuroDescBox');
+  function allDemoAnswered(){
+    const age=document.querySelector('input[name="age"]:checked');
+    const eth=document.querySelectorAll('input[name="ethnicity"]:checked').length>0;
+    const dialect=document.querySelector('input[name="dialect"]:checked');
+    const gender=document.querySelector('input[name="gender"]:checked');
+    const first=document.querySelector('input[name="firstlang"]:checked');
+    const speech=document.querySelector('input[name="speech"]:checked');
+    const neuro=document.querySelector('input[name="neuro"]:checked');
+    const tech=document.querySelectorAll('input[name="tech"]:checked').length>0;
+    const aiuse=document.querySelector('input[name="aiuse"]:checked');
+    const aiatt=document.querySelector('input[name="aiatt"]:checked');
+    if(!age||!eth||!dialect||!gender||!first||!speech||!neuro||!tech||!aiuse||!aiatt)return false;
+    if(first.value!=="English only"&&!document.getElementById('otherLangText').value.trim())return false;
+    if(speech.value==="Yes"&&!document.getElementById('speechDescText').value.trim())return false;
+    if(neuro.value==="Yes"&&!document.getElementById('neuroDescText').value.trim())return false;
+    return true;
+  }
+  function updateBtn(){btn.disabled=!allDemoAnswered();}
+  document.querySelectorAll('#demoQuestions input,#demoQuestions textarea').forEach(el=>{el.addEventListener('input',updateBtn);el.addEventListener('change',updateBtn);});
+  btn.disabled=true;
+  btn.onclick=()=>{demo.classList.add('hidden');document.getElementById('screen-feedback').classList.remove('hidden');};
 }
 
 document.getElementById('feedbackNextBtn').onclick=()=>{
