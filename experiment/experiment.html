@@ -72,6 +72,7 @@ textarea {
   display: block;
   margin: 4px 0;
 }
+/* Slider styling */
 input[type="range"] {
   -webkit-appearance: none;
   width: 100%;
@@ -108,7 +109,6 @@ input[type="range"].active::-moz-range-thumb { background: #007bff; }
   text-align: center;
   white-space: nowrap;
 }
-.small-note { color:#666; font-size:13px; margin-top:8px; }
 </style>
 </head>
 <body>
@@ -125,14 +125,13 @@ input[type="range"].active::-moz-range-thumb { background: #007bff; }
   <button class="btn btn-primary" id="consentBtn" disabled>Continue</button>
 </div>
 
-<!-- Audio Attention Check -->
+<!-- Audio Attention Check (reused throughout, including right after consent) -->
 <div class="card hidden" id="screen-audiocheck">
   <h1>Audio Check</h1>
-  <p class="small-note">Press play and then type the exact word/phrase you heard.</p>
   <button class="btn btn-primary" id="playAudioCheckBtn">Play Audio</button>
-  <audio id="audioCheckPlayer" preload="auto"></audio>
+  <audio id="audioCheckPlayer"></audio>
   <div class="question-block">
-    <p>Type what you heard:</p>
+    <p>Type the word you heard:</p>
     <input type="text" id="audioCheckResponse" style="width:300px; padding:6px;">
   </div>
   <button class="btn btn-primary" id="audioCheckNextBtn" disabled>Continue</button>
@@ -172,6 +171,9 @@ input[type="range"].active::-moz-range-thumb { background: #007bff; }
 </div>
 
 <script>
+/* ===========================
+   Helpers / Visuals
+=========================== */
 function setSliderBackground(slider){
   if(!slider.classList.contains('active')){slider.style.background='#ddd';return;}
   const min=Number(slider.min),max=Number(slider.max),val=Number(slider.value);
@@ -180,11 +182,17 @@ function setSliderBackground(slider){
 }
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
 
+/* ===========================
+   Config (updated for .mp3 + new paths)
+=========================== */
 const CONFIG={
-  assetsBase:'https://nkhaloo.github.io/AAE_AI/data/soundfiles',
-  stimuliPersonality:['passage'],
+  // Local base for experiment sound files
+  assetsBase:'/Users/noahkhaloo/Desktop/AAE_AI/data/soundfiles',
+  // Attention check audio base
+  attnBase:'/Users/noahkhaloo/Desktop/AAE_AI/experiment/audio_check',
+  stimuliPersonality:['passage'], // personality uses "passage"
   stimuliRace:['central','fronting','mono','raising'],
-  suffix:'.mp3',
+  suffix:'.mp3', // switched from .wav to .mp3
   questions:{
     Personality:[
       "How friendly does this speaker sound?",
@@ -202,66 +210,121 @@ const CONFIG={
       {type:"likert",text:"How feminine or masculine does the AI voice sound?",scaleMin:1,scaleMax:7}
     ]
   },
+  // Removed old CONFIG.attnChecks (text-based) entirely
   bins:['BF','BM','WF','WM'],
   numsPerBin:8
 };
 
-/* ---------- Attention Checks ---------- */
-const ATTENTION={
-  basePath:'https://nkhaloo.github.io/AAE_AI/experiment/audio_check',
-  list:[],
-  idx:0
+/* ===========================
+   Global State
+=========================== */
+const State={
+  blocks:{},
+  order:[],
+  currentBlock:null,
+  trialIndex:0,
+  audioFinished:false,
+  attnQueue:[] // will hold 22 shuffled attention-check URLs
 };
-(function initAttentionList(){
-  ATTENTION.list = Array.from({length:22},(_,i)=>`${ATTENTION.basePath}/${i+1}.mp3`);
-  shuffle(ATTENTION.list);
-})();
-function hideAllScreens(){ document.querySelectorAll('.card').forEach(c=>c.classList.add('hidden')); }
-function showAttentionCheck(onDone){
-  const screen=document.getElementById('screen-audiocheck');
-  const btnPlay=document.getElementById('playAudioCheckBtn');
-  const audio=document.getElementById('audioCheckPlayer');
-  const input=document.getElementById('audioCheckResponse');
-  const btnNext=document.getElementById('audioCheckNextBtn');
-  if(ATTENTION.idx>=ATTENTION.list.length){shuffle(ATTENTION.list);ATTENTION.idx=0;}
-  const src=ATTENTION.list[ATTENTION.idx]; ATTENTION.idx++;
-  input.value=""; btnNext.disabled=true; btnPlay.disabled=false; btnPlay.textContent='Play Audio';
-  audio.src=src; audio.currentTime=0;
-  input.oninput=()=>{btnNext.disabled=!input.value.trim();};
-  btnPlay.onclick=async()=>{try{btnPlay.disabled=true;btnPlay.textContent='Playing...';await audio.play();}catch{btnPlay.disabled=false;btnPlay.textContent='Play Audio';}};
-  audio.onended=()=>{btnPlay.disabled=false;btnPlay.textContent='Replay Audio';};
-  btnNext.onclick=()=>{screen.classList.add('hidden'); if(typeof onDone==='function') onDone();};
-  hideAllScreens();
-  screen.classList.remove('hidden');
-}
 
-/* ---------- State ---------- */
-const State={blocks:{},order:[],currentBlock:null,trialIndex:0,audioFinished:false};
-
-/* ---------- Consent ---------- */
+/* ===========================
+   Consent -> First Audio Attention Check
+=========================== */
 document.getElementById('consentCheck').onchange=e=>{
   document.getElementById('consentBtn').disabled=!e.target.checked;
 };
 document.getElementById('consentBtn').onclick=()=>{
-  hideAllScreens();
-  showAttentionCheck(()=>{ startExperiment(); });
+  // Hide consent, show audio attention check #1
+  document.getElementById('screen-consent').classList.add('hidden');
+  prepareAttentionQueue(); // build & shuffle 22 items
+  showAudioAttentionCheck(()=>{ // after first attention check, start experiment
+    startExperiment();
+  });
 };
 
-/* ---------- Build Trials ---------- */
-function buildAllSpeakers(){const s=[];for(const b of CONFIG.bins){for(let n=1;n<=CONFIG.numsPerBin;n++){s.push(`${b}${n}`);}}return s;}
+/* ===========================
+   Attention Check Utilities
+=========================== */
+function prepareAttentionQueue(){
+  const urls=[];
+  for(let i=1;i<=22;i++){
+    urls.push(`${CONFIG.attnBase}/${i}.mp3`);
+  }
+  State.attnQueue = shuffle(urls);
+}
+function nextAttentionAudio(){
+  if(State.attnQueue.length===0){
+    // Safety: rebuild if somehow exhausted
+    prepareAttentionQueue();
+  }
+  return State.attnQueue.shift();
+}
+function showAudioAttentionCheck(onContinue){
+  const card=document.getElementById('screen-audiocheck');
+  const playBtn=document.getElementById('playAudioCheckBtn');
+  const audio=document.getElementById('audioCheckPlayer');
+  const input=document.getElementById('audioCheckResponse');
+  const nextBtn=document.getElementById('audioCheckNextBtn');
+
+  // Reset UI
+  input.value=""; nextBtn.disabled=true;
+  playBtn.disabled=false; playBtn.textContent='Play Audio';
+
+  // Load next randomized attention-check audio
+  audio.src = nextAttentionAudio();
+  audio.currentTime = 0;
+
+  // Wire events
+  playBtn.onclick=async()=>{
+    try{ playBtn.disabled=true; playBtn.textContent='Playing...'; await audio.play(); }
+    catch{ playBtn.disabled=false; playBtn.textContent='Play Audio';}
+  };
+  audio.onended=()=>{ playBtn.disabled=false; playBtn.textContent='Replay Audio'; };
+  input.oninput=()=>{ nextBtn.disabled = !input.value.trim(); };
+
+  nextBtn.onclick=()=>{
+    // (You can log input.value here if needed)
+    card.classList.add('hidden');
+    onContinue && onContinue();
+  };
+
+  // Show card
+  card.classList.remove('hidden');
+}
+
+/* ===========================
+   Stimuli Construction
+=========================== */
+function buildAllSpeakers(){
+  const s=[];
+  for(const b of CONFIG.bins){
+    for(let n=1;n<=CONFIG.numsPerBin;n++){ s.push(`${b}${n}`); }
+  }
+  return s;
+}
 function sampleSpeakersPerBlock(all){
   const byBin=Object.fromEntries(CONFIG.bins.map(b=>[b,[]]));
-  for(const sp of all){byBin[sp.replace(/\d+$/,'')].push(sp);}
+  for(const sp of all){ byBin[sp.replace(/\d+$/,'')].push(sp); }
   CONFIG.bins.forEach(b=>shuffle(byBin[b]));
   const personality=[],race=[];
-  CONFIG.bins.forEach(b=>{personality.push(...byBin[b].slice(0,4));race.push(...byBin[b].slice(4,8));});
+  CONFIG.bins.forEach(b=>{ personality.push(...byBin[b].slice(0,4)); race.push(...byBin[b].slice(4,8)); });
   return {personality,race};
 }
 function buildBlockTrials(speakers,stimuliList,blockName){
-  const out=[];for(const sp of speakers){for(const st of stimuliList){
-    const folder=(st==='passage')?'passage':st;
-    out.push({block:blockName,speaker:sp,stimulus:st,url:`${CONFIG.assetsBase}/${folder}/${sp}_${st}${CONFIG.suffix}`});
-  }}return shuffle(out);
+  const out=[];
+  for(const sp of speakers){
+    for(const st of stimuliList){
+      // NOTE: "passage" folder is singular now
+      const folder=(st==='passage')?'passage':st;
+      out.push({
+        block:blockName,
+        speaker:sp,
+        stimulus:st,
+        url:`${CONFIG.assetsBase}/${folder}/${sp}_${st}${CONFIG.suffix}`
+      });
+    }
+  }
+  return shuffle(out);
 }
 function startExperiment(){
   const all=buildAllSpeakers();
@@ -274,21 +337,25 @@ function startExperiment(){
   renderBlock('Personality');
 }
 
-/* ---------- Trials ---------- */
+/* ===========================
+   Block / Trial Rendering
+=========================== */
 const block=document.getElementById('screen-block');
 const progressBar=document.getElementById('progressBar');
 const player=document.getElementById('player');
 const playBtn=document.getElementById('playBtn');
 const nextBtn=document.getElementById('nextBtn');
 const questionsContainer=document.getElementById('questionsContainer');
+
 function renderQuestions(blockName){
   questionsContainer.innerHTML='';
   if(blockName==="Personality"){
     shuffle(CONFIG.questions.Personality).forEach(q=>{
       const div=document.createElement('div');
       div.className='question-block';
-      div.innerHTML=`<p>${q}</p><input type="range" min="1" max="7" step="any" value="4" class="slider" data-touched="false" disabled>
-      <div class="scale-labels"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span></div>`;
+      div.innerHTML=`<p>${q}</p>
+        <input type="range" min="1" max="7" step="any" value="4" class="slider" data-touched="false" disabled>
+        <div class="scale-labels"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span></div>`;
       questionsContainer.appendChild(div);
     });
   } else {
@@ -314,7 +381,7 @@ function renderQuestions(blockName){
 }
 function disableInputs(disabled){document.querySelectorAll('#questionsContainer input').forEach(inp=>inp.disabled=disabled);}
 function allAnswered(){
-  if(State.currentBlock==="Personality")return Array.from(document.querySelectorAll('.slider')).every(sl=>sl.dataset.touched==="true");
+  if(State.currentBlock==="Personality") return Array.from(document.querySelectorAll('.slider')).every(sl=>sl.dataset.touched==="true");
   if(State.currentBlock==="Race"){
     const sliders=Array.from(document.querySelectorAll('.slider'));
     const radios=Array.from(document.querySelectorAll('input[type=radio]'));
@@ -324,74 +391,115 @@ function allAnswered(){
   }
   return false;
 }
-function updateNextButtonState(){nextBtn.disabled=!(State.audioFinished&&allAnswered());}
+function updateNextButtonState(){ nextBtn.disabled=!(State.audioFinished&&allAnswered()); }
 function resetAnswers(){
   document.querySelectorAll('.slider').forEach(sl=>{sl.value=4;sl.dataset.touched="false";sl.disabled=true;setSliderBackground(sl);});
   document.querySelectorAll('input[type=radio]').forEach(r=>{r.checked=false;r.disabled=true;});
   nextBtn.disabled=true;
 }
-function currentTrials(){return State.blocks[State.currentBlock];}
-function currentTrial(){return currentTrials()[State.trialIndex];}
+function currentTrials(){ return State.blocks[State.currentBlock]; }
+function currentTrial(){ return currentTrials()[State.trialIndex]; }
+
 function updateTrialUI(){
-  const t=currentTrial(),total=currentTrials().length;
+  const t=currentTrial(), total=currentTrials().length;
   progressBar.style.width=`${(State.trialIndex/total)*100}%`;
   renderQuestions(State.currentBlock);
   player.src=t.url;
   player.currentTime=0;
   State.audioFinished=false;
   resetAnswers();
+
   playBtn.disabled=false;
   playBtn.textContent='Play Audio';
-  playBtn.onclick=async()=>{try{playBtn.disabled=true;playBtn.textContent='Playing...';await player.play();}catch{playBtn.disabled=false;playBtn.textContent='Play Audio';}};
-  player.onended=()=>{State.audioFinished=true;disableInputs(false);playBtn.disabled=false;playBtn.textContent='Replay Audio';updateNextButtonState();};
+  playBtn.onclick=async()=>{
+    try{ playBtn.disabled=true; playBtn.textContent='Playing...'; await player.play(); }
+    catch{ playBtn.disabled=false; playBtn.textContent='Play Audio'; }
+  };
+  player.onended=()=>{
+    State.audioFinished=true;
+    disableInputs(false);
+    playBtn.disabled=false;
+    playBtn.textContent='Replay Audio';
+    updateNextButtonState();
+  };
 }
 function renderBlock(name){
-  State.currentBlock=name;State.trialIndex=0;
-  hideAllScreens();
-  block.classList.remove('hidden');updateTrialUI();
+  State.currentBlock=name;
+  State.trialIndex=0;
+  block.classList.remove('hidden');
+  updateTrialUI();
   nextBtn.onclick=handleNext;
-  document.getElementById('skipBtn').onclick=()=>{State.audioFinished=true;handleNext();};
+  document.getElementById('skipBtn').onclick=()=>{ State.audioFinished=true; handleNext(); };
 }
 
-/* ---------- handleNext FIXED ---------- */
+/* ===========================
+   Attention Check Insertion Rules
+   - 1 after consent (already handled)
+   - Personality: after every 4 trials (4 total for 16 trials)
+   - Between Personality and Race: 1
+   - Race: after every 4 trials (16 total for 64 trials)
+=========================== */
 function handleNext(){
+  // Move past the just-completed trial
   State.trialIndex++;
   const total=currentTrials().length;
-  const inPersonality=(State.currentBlock==='Personality');
-  const inRace=(State.currentBlock==='Race');
-  if(State.trialIndex<=total){
-    const justCompletedCount=State.trialIndex;
-    if(justCompletedCount%4===0){
-      hideAllScreens();
-      showAttentionCheck(()=>{updateTrialUI();});
-      return;
-    }
-    updateTrialUI();
-    return;
-  }
-  if(State.trialIndex>total){
-    if(inPersonality){
-      const justDidAttn = (total % 4 === 0);
-      if(justDidAttn){
+  const atEnd = State.trialIndex >= total;
+  const mod4 = (State.trialIndex % 4 === 0);
+
+  // Build list of attention checks we owe *right now* (may be multiple at a boundary)
+  const pendingChecks=[];
+  if(State.currentBlock==='Personality' && mod4){ pendingChecks.push('post-trial'); }
+  if(atEnd && State.currentBlock==='Personality'){ pendingChecks.push('between-blocks'); }
+  if(State.currentBlock==='Race' && mod4){ pendingChecks.push('post-trial'); }
+
+  const proceedAfterChecks=()=>{
+    if(State.trialIndex < total){
+      // Continue within current block
+      updateTrialUI();
+    } else {
+      // Finished current block
+      const idx=State.order.indexOf(State.currentBlock);
+      if(idx===0){
+        // Move to Race block
         renderBlock('Race');
       } else {
-        hideAllScreens();
-        showAttentionCheck(()=>{renderBlock('Race');});
+        // All done with blocks -> Demographics
+        block.classList.add('hidden');
+        renderDemographics();
       }
-      return;
     }
-    if(inRace){
-      hideAllScreens();
-      renderDemographics();
-      return;
+  };
+
+  if(pendingChecks.length>0){
+    // Show all pending checks sequentially, then proceed
+    const runSeq=(i)=>{
+      if(i>=pendingChecks.length){
+        // when all attention checks done, show block again
+        block.classList.remove('hidden');
+        proceedAfterChecks();
+        return;
+      }
+      showAudioAttentionCheck(()=>runSeq(i+1));
+    };
+    block.classList.add('hidden');
+    runSeq(0);
+
+  } else {
+    // No check owed now; proceed
+    if(State.trialIndex < total){ updateTrialUI(); }
+    else {
+      const idx=State.order.indexOf(State.currentBlock);
+      if(idx===0){ renderBlock('Race'); }
+      else { block.classList.add('hidden'); renderDemographics(); }
     }
   }
 }
 
-/* ---------- Demographics ---------- */
+/* ===========================
+   Demographics / Feedback
+=========================== */
 function renderDemographics(){
   const demo=document.getElementById('screen-demographics');
-  hideAllScreens();
   demo.classList.remove('hidden');
   let html="";
   html+=`<div class="question-block"><p>Please select your age range.</p>`;
@@ -457,15 +565,32 @@ function renderDemographics(){
     if(neuro.value==="Yes"&&!document.getElementById('neuroDescText').value.trim())return false;
     return true;
   }
-  function updateBtn(){btn.disabled=!allDemoAnswered();}
-  document.querySelectorAll('#demoQuestions input,#demoQuestions textarea').forEach(el=>{el.addEventListener('input',updateBtn);el.addEventListener('change',updateBtn);});
-  btn.disabled=true;
-  btn.onclick=()=>{demo.classList.add('hidden');document.getElementById('screen-feedback').classList.remove('hidden');};
+  function updateBtn(){ btn.disabled=!allDemoAnswered(); }
+  document.querySelectorAll('#demoQuestions input,#demoQuestions textarea').forEach(el=>{
+    el.addEventListener('input',updateBtn);
+    el.addEventListener('change',updateBtn);
+  });
+  btn.disabled = true;
+
+  function finalizeDemo() {
+    if (!btn.disabled) {
+      demo.classList.add('hidden');
+      document.getElementById('screen-feedback').classList.remove('hidden');
+    } else {
+      // In case it was never re-enabled due to event timing, re-check manually:
+      if (allDemoAnswered()) {
+        demo.classList.add('hidden');
+        document.getElementById('screen-feedback').classList.remove('hidden');
+      }
+    }
+  }
+
+  btn.onclick = finalizeDemo;
+
 }
 
-/* ---------- Feedback ---------- */
 document.getElementById('feedbackNextBtn').onclick=()=>{
-  hideAllScreens();
+  document.getElementById('screen-feedback').classList.add('hidden');
   document.getElementById('screen-finish').classList.remove('hidden');
 };
 </script>
