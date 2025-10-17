@@ -171,6 +171,25 @@ input[type="range"].active::-moz-range-thumb { background: #007bff; }
 
 <script>
 /* ===========================
+   GOOGLE SHEETS ENDPOINT + SENDER
+=========================== */
+const GOOGLE_SHEET_URL = "https://script.google.com/macros/s/AKfycbyKd3LyCOlJZxnlEmXg3GL4RUmIRti97oVc2vbB08_ut4LJGpNJ0cKUZ5ND2wplfDBW/exec";
+
+async function sendToSheet(data){
+  try{
+    await fetch(GOOGLE_SHEET_URL,{
+      method:"POST",
+      mode:"no-cors",
+      headers:{"Content-Type":"application/json"},
+      body: JSON.stringify(data)
+    });
+    console.log("✅ Sent to Google Sheet", data);
+  }catch(err){
+    console.error("❌ Sheet send error:", err);
+  }
+}
+
+/* ===========================
    Helpers / Visuals
 =========================== */
 function setSliderBackground(slider){
@@ -207,10 +226,32 @@ const CONFIG = {
       {type:"likert",text:"How feminine or masculine does the AI voice sound?",scaleMin:1,scaleMax:7}
     ]
   },
-  // Removed old CONFIG.attnChecks (text-based) entirely
   bins:['BF','BM','WF','WM'],
   numsPerBin:8
 };
+
+/* ===========================
+   Mapping question text -> sheet keys
+=========================== */
+const Q2KEY = {
+  // Personality (7)
+  "How friendly does this speaker sound?":"friendly",
+  "How professional does this speaker sound?":"professional",
+  "How funny does this speaker sound?":"funny",
+  "How competent does this speaker sound?":"competent",
+  "How trustworthy does this speaker sound?":"trustworthy",
+  "How pleasant does this speaker sound?":"pleasant",
+  "How human-like was this voice?":"human_like",
+  // Race (4)
+  "What dialect region does the AI voice sound like?":"dialect_region",
+  "What race does the AI voice sound like?":"perceived_race",
+  "How old does the AI voice sound?":"perceived_age",
+  "How feminine or masculine does the AI voice sound?":"gender_scale"
+};
+
+function filenameForTrial(t){
+  return `${t.speaker}_${t.stimulus}${CONFIG.suffix}`; // e.g., BF1_passage.mp3
+}
 
 /* ===========================
    Global State
@@ -221,7 +262,11 @@ const State={
   currentBlock:null,
   trialIndex:0,
   audioFinished:false,
-  attnQueue:[] // will hold 22 shuffled attention-check URLs
+  attnQueue:[],        // shuffled list of 22 attention-check URLs
+  attnAnswers:[],      // typed strings in sequence (1..22)
+  participantId:null,  // generated at start
+  answers:{},          // { friendly: "BF1_passage.mp3 : 5", ... }
+  demographics:{}      // { age_range:..., ethnicity:..., ... }
 };
 
 /* ===========================
@@ -231,6 +276,9 @@ document.getElementById('consentCheck').onchange=e=>{
   document.getElementById('consentBtn').disabled=!e.target.checked;
 };
 document.getElementById('consentBtn').onclick=()=>{
+  // Generate anonymous participant id at start
+  State.participantId = 'P-' + Math.random().toString(36).substring(2,10);
+
   // Hide consent, show audio attention check #1
   document.getElementById('screen-consent').classList.add('hidden');
   prepareAttentionQueue(); // build & shuffle 22 items
@@ -268,7 +316,8 @@ function showAudioAttentionCheck(onContinue){
   playBtn.disabled=false; playBtn.textContent='Play Audio';
 
   // Load next randomized attention-check audio
-  audio.src = nextAttentionAudio();
+  const attnUrl = nextAttentionAudio();
+  audio.src = attnUrl;
   audio.currentTime = 0;
 
   // Wire events
@@ -280,7 +329,9 @@ function showAudioAttentionCheck(onContinue){
   input.oninput=()=>{ nextBtn.disabled = !input.value.trim(); };
 
   nextBtn.onclick=()=>{
-    // (You can log input.value here if needed)
+    // Store typed answer in sequence order (1..22)
+    const ans = input.value.trim();
+    State.attnAnswers.push(ans);
     card.classList.add('hidden');
     onContinue && onContinue();
   };
@@ -311,8 +362,7 @@ function buildBlockTrials(speakers,stimuliList,blockName){
   const out=[];
   for(const sp of speakers){
     for(const st of stimuliList){
-      // NOTE: "passage" folder is singular now
-      const folder=(st==='passage')?'passage':st;
+      const folder=(st==='passage')?'passage':st; // "passage" folder is singular
       out.push({
         block:blockName,
         speaker:sp,
@@ -397,6 +447,44 @@ function resetAnswers(){
 function currentTrials(){ return State.blocks[State.currentBlock]; }
 function currentTrial(){ return currentTrials()[State.trialIndex]; }
 
+/* ===========================
+   Capture answers for current trial (first-write wins)
+=========================== */
+function recordCurrentTrialAnswers(){
+  const t = currentTrial();
+  if(!t) return;
+  const fileLabel = `${filenameForTrial(t)}`; // e.g., BF1_passage.mp3
+
+  // Iterate through question blocks currently rendered
+  const blocks = Array.from(document.querySelectorAll('#questionsContainer .question-block'));
+  for(const b of blocks){
+    const prompt = b.querySelector('p')?.textContent?.trim() || "";
+    const key = Q2KEY[prompt];
+    if(!key) continue;
+
+    // Determine value based on control type
+    let val = "";
+    const slider = b.querySelector('input[type="range"]');
+    const radios = b.querySelectorAll('input[type="radio"]');
+
+    if(slider){
+      val = slider.value; // 1..7
+    } else if(radios && radios.length){
+      const checked = b.querySelector('input[type="radio"]:checked');
+      if(!checked) continue;
+      val = checked.value;
+    }
+
+    // Build "<file> : <value>"
+    const cell = `${fileLabel} : ${val}`;
+
+    // First-write wins: only set if not already recorded
+    if(!(key in State.answers) || State.answers[key] === ""){
+      State.answers[key] = cell;
+    }
+  }
+}
+
 function updateTrialUI(){
   const t=currentTrial(), total=currentTrials().length;
   progressBar.style.width=`${(State.trialIndex/total)*100}%`;
@@ -426,7 +514,11 @@ function renderBlock(name){
   block.classList.remove('hidden');
   updateTrialUI();
   nextBtn.onclick=handleNext;
-  document.getElementById('skipBtn').onclick=()=>{ State.audioFinished=true; handleNext(); };
+  document.getElementById('skipBtn').onclick=()=>{ 
+    State.audioFinished=true; 
+    // If skipping during pilot, we won't record answers from this trial
+    handleNext(); 
+  };
 }
 
 /* ===========================
@@ -437,6 +529,11 @@ function renderBlock(name){
    - Race: after every 4 trials (16 total for 64 trials)
 =========================== */
 function handleNext(){
+  // Before advancing, capture answers for the CURRENT trial
+  if(State.audioFinished && allAnswered()){
+    recordCurrentTrialAnswers();
+  }
+
   // Move past the just-completed trial
   State.trialIndex++;
   const total=currentTrials().length;
@@ -589,6 +686,27 @@ function renderDemographics(){
 
   btn.onclick=()=>{
     if(allDemoAnswered()){
+      // Collect demographics into State.demographics (using sheet column names)
+      const age = document.querySelector('input[name="age"]:checked')?.value || "";
+      const eth = Array.from(document.querySelectorAll('input[name="ethnicity"]:checked')).map(e=>e.value).join(", ");
+      const dialect = document.querySelector('input[name="dialect"]:checked')?.value || "";
+      const first = document.querySelector('input[name="firstlang"]:checked')?.value || "";
+      const otherLangs = document.getElementById('otherLangText')?.value?.trim() || "";
+      const first_language = (first==="English and another language" && otherLangs) ? `English + ${otherLangs}` : first;
+      const gender = document.querySelector('input[name="gender"]:checked')?.value || "";
+      const ai_use = document.querySelector('input[name="aiuse"]:checked')?.value || "";
+      const ai_attitude = document.querySelector('input[name="aiatt"]:checked')?.value || "";
+
+      State.demographics = {
+        age_range: age,
+        ethnicity: eth,
+        dialect,
+        first_language,
+        gender,
+        ai_use,
+        ai_attitude
+      };
+
       demo.classList.add('hidden');
       document.getElementById('screen-feedback').classList.remove('hidden');
     } else {
@@ -597,8 +715,71 @@ function renderDemographics(){
   };
 }
 
-
+/* ===========================
+   Final submit -> Build payload and send to Sheets
+=========================== */
 document.getElementById('feedbackNextBtn').onclick=()=>{
+  const payload = {
+    timestamp: new Date().toISOString(),
+    participant_id: State.participantId || ('P-' + Math.random().toString(36).substring(2,10)),
+
+    // Personality (first observed values only)
+    friendly: State.answers.friendly || "",
+    professional: State.answers.professional || "",
+    funny: State.answers.funny || "",
+    competent: State.answers.competent || "",
+    trustworthy: State.answers.trustworthy || "",
+    pleasant: State.answers.pleasant || "",
+    human_like: State.answers.human_like || "",
+
+    // Race perception (first observed values only)
+    dialect_region: State.answers.dialect_region || "",
+    perceived_race: State.answers.perceived_race || "",
+    perceived_age: State.answers.perceived_age || "",
+    gender_scale: State.answers.gender_scale || "",
+
+    // Attention checks (22 total)
+    // Fill sequentially; blanks if fewer than 22
+    attention_check_1:  State.attnAnswers[0]  || "",
+    attention_check_2:  State.attnAnswers[1]  || "",
+    attention_check_3:  State.attnAnswers[2]  || "",
+    attention_check_4:  State.attnAnswers[3]  || "",
+    attention_check_5:  State.attnAnswers[4]  || "",
+    attention_check_6:  State.attnAnswers[5]  || "",
+    attention_check_7:  State.attnAnswers[6]  || "",
+    attention_check_8:  State.attnAnswers[7]  || "",
+    attention_check_9:  State.attnAnswers[8]  || "",
+    attention_check_10: State.attnAnswers[9]  || "",
+    attention_check_11: State.attnAnswers[10] || "",
+    attention_check_12: State.attnAnswers[11] || "",
+    attention_check_13: State.attnAnswers[12] || "",
+    attention_check_14: State.attnAnswers[13] || "",
+    attention_check_15: State.attnAnswers[14] || "",
+    attention_check_16: State.attnAnswers[15] || "",
+    attention_check_17: State.attnAnswers[16] || "",
+    attention_check_18: State.attnAnswers[17] || "",
+    attention_check_19: State.attnAnswers[18] || "",
+    attention_check_20: State.attnAnswers[19] || "",
+    attention_check_21: State.attnAnswers[20] || "",
+    attention_check_22: State.attnAnswers[21] || "",
+
+    // Demographics
+    age_range:     State.demographics.age_range     || "",
+    ethnicity:     State.demographics.ethnicity     || "",
+    dialect:       State.demographics.dialect       || "",
+    first_language:State.demographics.first_language|| "",
+    gender:        State.demographics.gender        || "",
+    ai_use:        State.demographics.ai_use        || "",
+    ai_attitude:   State.demographics.ai_attitude   || "",
+
+    // Feedback
+    feedback_text: document.getElementById('feedbackText').value || ""
+  };
+
+  // Send once at the very end
+  sendToSheet(payload);
+
+  // Finish UI
   document.getElementById('screen-feedback').classList.add('hidden');
   document.getElementById('screen-finish').classList.remove('hidden');
 };
