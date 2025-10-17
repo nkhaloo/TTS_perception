@@ -72,7 +72,6 @@ textarea {
   display: block;
   margin: 4px 0;
 }
-/* Slider styling */
 input[type="range"] {
   -webkit-appearance: none;
   width: 100%;
@@ -125,7 +124,7 @@ input[type="range"].active::-moz-range-thumb { background: #007bff; }
   <button class="btn btn-primary" id="consentBtn" disabled>Continue</button>
 </div>
 
-<!-- Audio Attention Check (reused throughout, including right after consent) -->
+<!-- Audio Attention Check -->
 <div class="card hidden" id="screen-audiocheck">
   <button class="btn btn-primary" id="playAudioCheckBtn">Play Audio</button>
   <audio id="audioCheckPlayer"></audio>
@@ -171,27 +170,6 @@ input[type="range"].active::-moz-range-thumb { background: #007bff; }
 
 <script>
 /* ===========================
-   GOOGLE SHEETS ENDPOINT + SENDER
-=========================== */
-const GOOGLE_SHEET_URL = "https://script.google.com/macros/s/AKfycbxSjGh8GCoJY241vQIRlE1xN0dMPGW7jwNOlO_BkcFQ67Si5StEO1s0fytuUVO44V36/exec";
-
-async function sendToSheet(data) {
-  console.log("🚀 Sending data to Sheets:", data);
-  try {
-    // Send the POST without preflight or CORS restrictions
-    await fetch(GOOGLE_SHEET_URL, {
-      method: "POST",
-      mode: "no-cors",      // <-- this is the key
-      body: JSON.stringify(data)
-    });
-
-    console.log("✅ Sent to Google Sheet (no-cors mode). Check your sheet!");
-  } catch (err) {
-    console.error("❌ Error sending to Google Sheet:", err);
-  }
-}
-
-/* ===========================
    Helpers / Visuals
 =========================== */
 function setSliderBackground(slider){
@@ -203,11 +181,11 @@ function setSliderBackground(slider){
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
 
 /* ===========================
-   Config (updated for .mp3 + new paths)
+   Config
 =========================== */
 const CONFIG = {
-  assetsBase: '../data/soundfiles',   // go up one level from /experiment/
-  attnBase: './audio_check',          // inside the current folder
+  assetsBase: '../data/soundfiles',
+  attnBase: './audio_check',
   stimuliPersonality: ['passage'],
   stimuliRace: ['central','fronting','mono','raising'],
   suffix: '.mp3',
@@ -232,11 +210,7 @@ const CONFIG = {
   numsPerBin:8
 };
 
-/* ===========================
-   Mapping question text -> sheet keys
-=========================== */
 const Q2KEY = {
-  // Personality (7)
   "How friendly does this speaker sound?":"friendly",
   "How professional does this speaker sound?":"professional",
   "How funny does this speaker sound?":"funny",
@@ -244,7 +218,6 @@ const Q2KEY = {
   "How trustworthy does this speaker sound?":"trustworthy",
   "How pleasant does this speaker sound?":"pleasant",
   "How human-like was this voice?":"human_like",
-  // Race (4)
   "What dialect region does the AI voice sound like?":"dialect_region",
   "What race does the AI voice sound like?":"perceived_race",
   "How old does the AI voice sound?":"perceived_age",
@@ -252,7 +225,7 @@ const Q2KEY = {
 };
 
 function filenameForTrial(t){
-  return `${t.speaker}_${t.stimulus}${CONFIG.suffix}`; // e.g., BF1_passage.mp3
+  return `${t.speaker}_${t.stimulus}${CONFIG.suffix}`;
 }
 
 /* ===========================
@@ -264,46 +237,36 @@ const State={
   currentBlock:null,
   trialIndex:0,
   audioFinished:false,
-  attnQueue:[],        // shuffled list of 22 attention-check URLs
-  attnAnswers:[],      // typed strings in sequence (1..22)
-  participantId:null,  // generated at start
-  answers:{},          // { friendly: "BF1_passage.mp3 : 5", ... }
-  demographics:{}      // { age_range:..., ethnicity:..., ... }
+  attnQueue:[],
+  attnAnswers:[],
+  participantId:null,
+  answers:{},
+  demographics:{}
 };
 
 /* ===========================
-   Consent -> First Audio Attention Check
+   Consent
 =========================== */
 document.getElementById('consentCheck').onchange=e=>{
   document.getElementById('consentBtn').disabled=!e.target.checked;
 };
 document.getElementById('consentBtn').onclick=()=>{
-  // Generate anonymous participant id at start
   State.participantId = 'P-' + Math.random().toString(36).substring(2,10);
-
-  // Hide consent, show audio attention check #1
   document.getElementById('screen-consent').classList.add('hidden');
-  prepareAttentionQueue(); // build & shuffle 22 items
-  showAudioAttentionCheck(()=>{ // after first attention check, start experiment
-    startExperiment();
-  });
+  prepareAttentionQueue();
+  showAudioAttentionCheck(()=>{ startExperiment(); });
 };
 
 /* ===========================
-   Attention Check Utilities
+   Attention Checks
 =========================== */
 function prepareAttentionQueue(){
   const urls=[];
-  for(let i=1;i<=22;i++){
-    urls.push(`${CONFIG.attnBase}/${i}.mp3`);
-  }
+  for(let i=1;i<=22;i++){ urls.push(`${CONFIG.attnBase}/${i}.mp3`); }
   State.attnQueue = shuffle(urls);
 }
 function nextAttentionAudio(){
-  if(State.attnQueue.length===0){
-    // Safety: rebuild if somehow exhausted
-    prepareAttentionQueue();
-  }
+  if(State.attnQueue.length===0) prepareAttentionQueue();
   return State.attnQueue.shift();
 }
 function showAudioAttentionCheck(onContinue){
@@ -312,38 +275,26 @@ function showAudioAttentionCheck(onContinue){
   const audio=document.getElementById('audioCheckPlayer');
   const input=document.getElementById('audioCheckResponse');
   const nextBtn=document.getElementById('audioCheckNextBtn');
-
-  // Reset UI
   input.value=""; nextBtn.disabled=true;
   playBtn.disabled=false; playBtn.textContent='Play Audio';
-
-  // Load next randomized attention-check audio
-  const attnUrl = nextAttentionAudio();
-  audio.src = attnUrl;
-  audio.currentTime = 0;
-
-  // Wire events
+  audio.src=nextAttentionAudio();
+  audio.currentTime=0;
   playBtn.onclick=async()=>{
     try{ playBtn.disabled=true; playBtn.textContent='Playing...'; await audio.play(); }
     catch{ playBtn.disabled=false; playBtn.textContent='Play Audio';}
   };
   audio.onended=()=>{ playBtn.disabled=false; playBtn.textContent='Replay Audio'; };
-  input.oninput=()=>{ nextBtn.disabled = !input.value.trim(); };
-
+  input.oninput=()=>{ nextBtn.disabled=!input.value.trim(); };
   nextBtn.onclick=()=>{
-    // Store typed answer in sequence order (1..22)
-    const ans = input.value.trim();
-    State.attnAnswers.push(ans);
+    State.attnAnswers.push(input.value.trim());
     card.classList.add('hidden');
     onContinue && onContinue();
   };
-
-  // Show card
   card.classList.remove('hidden');
 }
 
 /* ===========================
-   Stimuli Construction
+   Experiment Flow
 =========================== */
 function buildAllSpeakers(){
   const s=[];
@@ -364,7 +315,7 @@ function buildBlockTrials(speakers,stimuliList,blockName){
   const out=[];
   for(const sp of speakers){
     for(const st of stimuliList){
-      const folder=(st==='passage')?'passage':st; // "passage" folder is singular
+      const folder=(st==='passage')?'passage':st;
       out.push({
         block:blockName,
         speaker:sp,
@@ -387,7 +338,7 @@ function startExperiment(){
 }
 
 /* ===========================
-   Block / Trial Rendering
+   Block / Trial Logic
 =========================== */
 const block=document.getElementById('screen-block');
 const progressBar=document.getElementById('progressBar');
@@ -449,44 +400,6 @@ function resetAnswers(){
 function currentTrials(){ return State.blocks[State.currentBlock]; }
 function currentTrial(){ return currentTrials()[State.trialIndex]; }
 
-/* ===========================
-   Capture answers for current trial (first-write wins)
-=========================== */
-function recordCurrentTrialAnswers(){
-  const t = currentTrial();
-  if(!t) return;
-  const fileLabel = `${filenameForTrial(t)}`; // e.g., BF1_passage.mp3
-
-  // Iterate through question blocks currently rendered
-  const blocks = Array.from(document.querySelectorAll('#questionsContainer .question-block'));
-  for(const b of blocks){
-    const prompt = b.querySelector('p')?.textContent?.trim() || "";
-    const key = Q2KEY[prompt];
-    if(!key) continue;
-
-    // Determine value based on control type
-    let val = "";
-    const slider = b.querySelector('input[type="range"]');
-    const radios = b.querySelectorAll('input[type="radio"]');
-
-    if(slider){
-      val = slider.value; // 1..7
-    } else if(radios && radios.length){
-      const checked = b.querySelector('input[type="radio"]:checked');
-      if(!checked) continue;
-      val = checked.value;
-    }
-
-    // Build "<file> : <value>"
-    const cell = `${fileLabel} : ${val}`;
-
-    // First-write wins: only set if not already recorded
-    if(!(key in State.answers) || State.answers[key] === ""){
-      State.answers[key] = cell;
-    }
-  }
-}
-
 function updateTrialUI(){
   const t=currentTrial(), total=currentTrials().length;
   progressBar.style.width=`${(State.trialIndex/total)*100}%`;
@@ -495,7 +408,6 @@ function updateTrialUI(){
   player.currentTime=0;
   State.audioFinished=false;
   resetAnswers();
-
   playBtn.disabled=false;
   playBtn.textContent='Play Audio';
   playBtn.onclick=async()=>{
@@ -516,91 +428,43 @@ function renderBlock(name){
   block.classList.remove('hidden');
   updateTrialUI();
   nextBtn.onclick=handleNext;
-  document.getElementById('skipBtn').onclick=()=>{ 
-    State.audioFinished=true; 
-    // If skipping during pilot, we won't record answers from this trial
-    handleNext(); 
-  };
+  document.getElementById('skipBtn').onclick=()=>{State.audioFinished=true;handleNext();};
 }
 
 /* ===========================
-   Attention Check Insertion Rules
-   - 1 after consent (already handled)
-   - Personality: after every 4 trials (4 total for 16 trials)
-   - Between Personality and Race: 1
-   - Race: after every 4 trials (16 total for 64 trials)
+   Attention Check Insertions
 =========================== */
 function handleNext(){
-  // Before advancing, capture answers for the CURRENT trial
-  if(State.audioFinished && allAnswered()){
-    recordCurrentTrialAnswers();
-  }
-
-  // Move past the just-completed trial
   State.trialIndex++;
   const total=currentTrials().length;
-  const atEnd = State.trialIndex >= total;
-  const mod4 = (State.trialIndex % 4 === 0);
-
-  // Build list of attention checks we owe *right now*
-  const pendingChecks = [];
-
-  if (State.currentBlock === 'Personality') {
-    if (atEnd) {
-      // only one between-block check after last trial
-      pendingChecks.push('between-blocks');
-    } else if (mod4) {
-      pendingChecks.push('post-trial');
-    }
-  } else if (State.currentBlock === 'Race' && mod4) {
-    pendingChecks.push('post-trial');
-  }
+  const atEnd=State.trialIndex>=total;
+  const mod4=(State.trialIndex%4===0);
+  const pendingChecks=[];
+  if(State.currentBlock==='Personality'){
+    if(atEnd){pendingChecks.push('between-blocks');}
+    else if(mod4){pendingChecks.push('post-trial');}
+  } else if(State.currentBlock==='Race'&&mod4){pendingChecks.push('post-trial');}
 
   const proceedAfterChecks=()=>{
-    if(State.trialIndex < total){
-      // Continue within current block
-      updateTrialUI();
-    } else {
-      // Finished current block
+    if(State.trialIndex<total) updateTrialUI();
+    else {
       const idx=State.order.indexOf(State.currentBlock);
-      if(idx===0){
-        // Move to Race block
-        renderBlock('Race');
-      } else {
-        // All done with blocks -> Demographics
-        block.classList.add('hidden');
-        renderDemographics();
-      }
+      if(idx===0) renderBlock('Race');
+      else { block.classList.add('hidden'); renderDemographics(); }
     }
   };
-
   if(pendingChecks.length>0){
-    // Show all pending checks sequentially, then proceed
     const runSeq=(i)=>{
-      if(i>=pendingChecks.length){
-        // when all attention checks done, show block again
-        block.classList.remove('hidden');
-        proceedAfterChecks();
-        return;
-      }
+      if(i>=pendingChecks.length){ block.classList.remove('hidden'); proceedAfterChecks(); return; }
       showAudioAttentionCheck(()=>runSeq(i+1));
     };
     block.classList.add('hidden');
     runSeq(0);
-
-  } else {
-    // No check owed now; proceed
-    if(State.trialIndex < total){ updateTrialUI(); }
-    else {
-      const idx=State.order.indexOf(State.currentBlock);
-      if(idx===0){ renderBlock('Race'); }
-      else { block.classList.add('hidden'); renderDemographics(); }
-    }
-  }
+  } else proceedAfterChecks();
 }
 
 /* ===========================
-   Demographics / Feedback
+   Demographics and Feedback
 =========================== */
 function renderDemographics(){
   const demo=document.getElementById('screen-demographics');
@@ -616,9 +480,7 @@ function renderDemographics(){
   ["Midwestern U.S.","Northeastern U.S.","Northwestern U.S.","Southeastern U.S.","Southwestern U.S."].forEach(opt=>{html+=`<label><input type="radio" name="dialect" value="${opt}"> ${opt}</label>`;});
   html+=`</div>`;
   html+=`<div class="question-block"><p>What is/are your first language(s)?</p>`;
-  ["English","English and another language"].forEach(opt=>{
-    html+=`<label><input type="radio" name="firstlang" value="${opt}"> ${opt}</label>`;
-  });
+  ["English","English and another language"].forEach(opt=>{html+=`<label><input type="radio" name="firstlang" value="${opt}"> ${opt}</label>`;});
   html+=`<div id="otherLangBox" class="hidden"><p>Please enter the language(s) besides English that you grew up speaking:</p><textarea id="otherLangText"></textarea></div></div>`;
   html+=`<div class="question-block"><p>What is your gender?</p>`;
   ["Male","Female","Non-binary"].forEach(opt=>{html+=`<label><input type="radio" name="gender" value="${opt}"> ${opt}</label>`;});
@@ -641,8 +503,6 @@ function renderDemographics(){
   document.getElementById('demoQuestions').innerHTML=html;
 
   const btn=document.getElementById('demoNextBtn');
-
-  // Conditional visibility for text boxes
   function toggleConditional(name,val,box){
     document.querySelectorAll(`input[name="${name}"]`).forEach(inp=>
       inp.addEventListener('change',()=>{
@@ -657,12 +517,10 @@ function renderDemographics(){
       })
     );
   }
-
   toggleConditional('firstlang','English and another language','otherLangBox');
   toggleConditional('speech','Yes','speechDescBox');
   toggleConditional('neuro','Yes','neuroDescBox');
 
-  // Validation logic
   function allDemoAnswered(){
     const age=document.querySelector('input[name="age"]:checked');
     const eth=document.querySelectorAll('input[name="ethnicity"]:checked').length>0;
@@ -674,122 +532,30 @@ function renderDemographics(){
     const tech=document.querySelectorAll('input[name="tech"]:checked').length>0;
     const aiuse=document.querySelector('input[name="aiuse"]:checked');
     const aiatt=document.querySelector('input[name="aiatt"]:checked');
-
     if(!age||!eth||!dialect||!gender||!first||!speech||!neuro||!tech||!aiuse||!aiatt) return false;
-
-    // Require text input when any conditional box is visible
-    if(first.value==="English and another language" && !document.getElementById('otherLangText').value.trim()) return false;
-    if(speech.value==="Yes" && !document.getElementById('speechDescText').value.trim()) return false;
-    if(neuro.value==="Yes" && !document.getElementById('neuroDescText').value.trim()) return false;
-
+    if(first.value==="English and another language"&&!document.getElementById('otherLangText').value.trim()) return false;
+    if(speech.value==="Yes"&&!document.getElementById('speechDescText').value.trim()) return false;
+    if(neuro.value==="Yes"&&!document.getElementById('neuroDescText').value.trim()) return false;
     return true;
   }
-
   function updateBtn(){ btn.disabled=!allDemoAnswered(); }
-
   document.querySelectorAll('#demoQuestions input,#demoQuestions textarea').forEach(el=>{
     el.addEventListener('input',updateBtn);
     el.addEventListener('change',updateBtn);
   });
-
-  btn.disabled = true;
-
+  btn.disabled=true;
   btn.onclick=()=>{
     if(allDemoAnswered()){
-      // Collect demographics into State.demographics (using sheet column names)
-      const age = document.querySelector('input[name="age"]:checked')?.value || "";
-      const eth = Array.from(document.querySelectorAll('input[name="ethnicity"]:checked')).map(e=>e.value).join(", ");
-      const dialect = document.querySelector('input[name="dialect"]:checked')?.value || "";
-      const first = document.querySelector('input[name="firstlang"]:checked')?.value || "";
-      const otherLangs = document.getElementById('otherLangText')?.value?.trim() || "";
-      const first_language = (first==="English and another language" && otherLangs) ? `English + ${otherLangs}` : first;
-      const gender = document.querySelector('input[name="gender"]:checked')?.value || "";
-      const ai_use = document.querySelector('input[name="aiuse"]:checked')?.value || "";
-      const ai_attitude = document.querySelector('input[name="aiatt"]:checked')?.value || "";
-
-      State.demographics = {
-        age_range: age,
-        ethnicity: eth,
-        dialect,
-        first_language,
-        gender,
-        ai_use,
-        ai_attitude
-      };
-
       demo.classList.add('hidden');
       document.getElementById('screen-feedback').classList.remove('hidden');
-    } else {
-      alert("Please complete all required questions before continuing.");
-    }
+    } else alert("Please complete all required questions before continuing.");
   };
 }
 
 /* ===========================
-   Final submit -> Build payload and send to Sheets
+   Final Screen
 =========================== */
 document.getElementById('feedbackNextBtn').onclick=()=>{
-  const payload = {
-    timestamp: new Date().toISOString(),
-    participant_id: State.participantId || ('P-' + Math.random().toString(36).substring(2,10)),
-
-    // Personality (first observed values only)
-    friendly: State.answers.friendly || "",
-    professional: State.answers.professional || "",
-    funny: State.answers.funny || "",
-    competent: State.answers.competent || "",
-    trustworthy: State.answers.trustworthy || "",
-    pleasant: State.answers.pleasant || "",
-    human_like: State.answers.human_like || "",
-
-    // Race perception (first observed values only)
-    dialect_region: State.answers.dialect_region || "",
-    perceived_race: State.answers.perceived_race || "",
-    perceived_age: State.answers.perceived_age || "",
-    gender_scale: State.answers.gender_scale || "",
-
-    // Attention checks (22 total)
-    // Fill sequentially; blanks if fewer than 22
-    attention_check_1:  State.attnAnswers[0]  || "",
-    attention_check_2:  State.attnAnswers[1]  || "",
-    attention_check_3:  State.attnAnswers[2]  || "",
-    attention_check_4:  State.attnAnswers[3]  || "",
-    attention_check_5:  State.attnAnswers[4]  || "",
-    attention_check_6:  State.attnAnswers[5]  || "",
-    attention_check_7:  State.attnAnswers[6]  || "",
-    attention_check_8:  State.attnAnswers[7]  || "",
-    attention_check_9:  State.attnAnswers[8]  || "",
-    attention_check_10: State.attnAnswers[9]  || "",
-    attention_check_11: State.attnAnswers[10] || "",
-    attention_check_12: State.attnAnswers[11] || "",
-    attention_check_13: State.attnAnswers[12] || "",
-    attention_check_14: State.attnAnswers[13] || "",
-    attention_check_15: State.attnAnswers[14] || "",
-    attention_check_16: State.attnAnswers[15] || "",
-    attention_check_17: State.attnAnswers[16] || "",
-    attention_check_18: State.attnAnswers[17] || "",
-    attention_check_19: State.attnAnswers[18] || "",
-    attention_check_20: State.attnAnswers[19] || "",
-    attention_check_21: State.attnAnswers[20] || "",
-    attention_check_22: State.attnAnswers[21] || "",
-
-    // Demographics
-    age_range:     State.demographics.age_range     || "",
-    ethnicity:     State.demographics.ethnicity     || "",
-    dialect:       State.demographics.dialect       || "",
-    first_language:State.demographics.first_language|| "",
-    gender:        State.demographics.gender        || "",
-    ai_use:        State.demographics.ai_use        || "",
-    ai_attitude:   State.demographics.ai_attitude   || "",
-
-    // Feedback
-    feedback_text: document.getElementById('feedbackText').value || ""
-  };
-
-  // Send once at the very end
-  sendToSheet(payload);
-
-  // Finish UI
   document.getElementById('screen-feedback').classList.add('hidden');
   document.getElementById('screen-finish').classList.remove('hidden');
 };
