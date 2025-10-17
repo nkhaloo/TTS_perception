@@ -241,6 +241,7 @@ document.getElementById('consentBtn').onclick=()=>{
   });
 };
 
+
 /* ===========================
    Attention Check Utilities
 =========================== */
@@ -438,61 +439,73 @@ function renderBlock(name){
    - Between Personality and Race: 1
    - Race: after every 4 trials (16 total for 64 trials)
 =========================== */
-function handleNext(){
-  // Move past the just-completed trial
+function handleNext() {
+  // 1️⃣ Collect the just-finished trial and their answers
+  const trial = currentTrial(); // get info about this trial
+  const answers = collectAnswersFromUI ? collectAnswersFromUI() : {}; // if you already have this helper, use it
+
+  // 2️⃣ Send one row to Google Sheets
+  if (trial) {
+    sendToGoogleSheet({
+      participantID: State.participantID,
+      block: trial.block,
+      speaker: trial.speaker,
+      stimulus: trial.stimulus,
+      answers: answers
+    });
+  }
+
+  // 3️⃣ Proceed with the original logic
   State.trialIndex++;
-  const total=currentTrials().length;
+  const total = currentTrials().length;
   const atEnd = State.trialIndex >= total;
   const mod4 = (State.trialIndex % 4 === 0);
 
-  // Build list of attention checks we owe *right now* (may be multiple at a boundary)
-  const pendingChecks=[];
-  if(State.currentBlock==='Personality' && mod4){ pendingChecks.push('post-trial'); }
-  if(atEnd && State.currentBlock==='Personality'){ pendingChecks.push('between-blocks'); }
-  if(State.currentBlock==='Race' && mod4){ pendingChecks.push('post-trial'); }
+  const pendingChecks = [];
+  if (State.currentBlock === 'Personality' && mod4) pendingChecks.push('post-trial');
+  if (atEnd && State.currentBlock === 'Personality') pendingChecks.push('between-blocks');
+  if (State.currentBlock === 'Race' && mod4) pendingChecks.push('post-trial');
 
-  const proceedAfterChecks=()=>{
-    if(State.trialIndex < total){
-      // Continue within current block
+  const proceedAfterChecks = () => {
+    if (State.trialIndex < total) {
       updateTrialUI();
     } else {
-      // Finished current block
-      const idx=State.order.indexOf(State.currentBlock);
-      if(idx===0){
-        // Move to Race block
+      const idx = State.order.indexOf(State.currentBlock);
+      if (idx === 0) {
         renderBlock('Race');
       } else {
-        // All done with blocks -> Demographics
         block.classList.add('hidden');
         renderDemographics();
       }
     }
   };
 
-  if(pendingChecks.length>0){
-    // Show all pending checks sequentially, then proceed
-    const runSeq=(i)=>{
-      if(i>=pendingChecks.length){
-        // when all attention checks done, show block again
+  if (pendingChecks.length > 0) {
+    const runSeq = (i) => {
+      if (i >= pendingChecks.length) {
         block.classList.remove('hidden');
         proceedAfterChecks();
         return;
       }
-      showAudioAttentionCheck(()=>runSeq(i+1));
+      showAudioAttentionCheck(() => runSeq(i + 1));
     };
     block.classList.add('hidden');
     runSeq(0);
-
   } else {
-    // No check owed now; proceed
-    if(State.trialIndex < total){ updateTrialUI(); }
-    else {
-      const idx=State.order.indexOf(State.currentBlock);
-      if(idx===0){ renderBlock('Race'); }
-      else { block.classList.add('hidden'); renderDemographics(); }
+    if (State.trialIndex < total) {
+      updateTrialUI();
+    } else {
+      const idx = State.order.indexOf(State.currentBlock);
+      if (idx === 0) {
+        renderBlock('Race');
+      } else {
+        block.classList.add('hidden');
+        renderDemographics();
+      }
     }
   }
 }
+
 
 /* ===========================
    Demographics / Feedback
@@ -604,6 +617,49 @@ document.getElementById('feedbackNextBtn').onclick=()=>{
   document.getElementById('screen-feedback').classList.add('hidden');
   document.getElementById('screen-finish').classList.remove('hidden');
 };
+
+// ======================
+// Google Sheets Connection
+// ======================
+
+const SHEET_URL = "https://script.google.com/macros/s/AKfycbxWQdPb0qYvldvH-vwIy41oyd2FDIbGLKheKa8CtCSs4wCdfS_AyJQa8fvDibtPIIkF/exec";
+
+// Give each participant a random anonymous ID
+State.participantID = "P_" + Date.now() + "_" + Math.random().toString(36).slice(2, 8);
+
+// Function that sends one row of data to the Sheet
+async function sendToGoogleSheet(row) {
+  try {
+    await fetch(SHEET_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(row)
+    });
+    console.log("Saved to Google Sheets:", row);
+  } catch (err) {
+    console.error("Error sending to Google Sheets:", err);
+  }
+}
+
+function collectAnswersFromUI() {
+  const out = {};
+  document.querySelectorAll('#questionsContainer .question-block').forEach(block => {
+    const q = (block.querySelector('p')?.textContent || "").trim();
+
+    const checked = block.querySelector('input[type="radio"]:checked');
+    if (checked) {
+      out[q] = checked.value;
+      return;
+    }
+
+    const slider = block.querySelector('input[type="range"]');
+    if (slider) {
+      out[q] = Number(slider.value);
+    }
+  });
+  return out;
+}
+
 </script>
 </body>
 </html>
