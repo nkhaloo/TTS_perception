@@ -540,11 +540,19 @@ function handleNext(){
   const atEnd = State.trialIndex >= total;
   const mod4 = (State.trialIndex % 4 === 0);
 
-  // Build list of attention checks we owe *right now* (may be multiple at a boundary)
-  const pendingChecks=[];
-  if(State.currentBlock==='Personality' && mod4){ pendingChecks.push('post-trial'); }
-  if(atEnd && State.currentBlock==='Personality'){ pendingChecks.push('between-blocks'); }
-  if(State.currentBlock==='Race' && mod4){ pendingChecks.push('post-trial'); }
+  // Build list of attention checks we owe *right now*
+  const pendingChecks = [];
+
+  if (State.currentBlock === 'Personality') {
+    if (atEnd) {
+      // only one between-block check after last trial
+      pendingChecks.push('between-blocks');
+    } else if (mod4) {
+      pendingChecks.push('post-trial');
+    }
+  } else if (State.currentBlock === 'Race' && mod4) {
+    pendingChecks.push('post-trial');
+  }
 
   const proceedAfterChecks=()=>{
     if(State.trialIndex < total){
