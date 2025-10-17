@@ -173,19 +173,20 @@ input[type="range"].active::-moz-range-thumb { background: #007bff; }
 /* ===========================
    GOOGLE SHEETS ENDPOINT + SENDER
 =========================== */
-const GOOGLE_SHEET_URL = "https://script.google.com/macros/s/AKfycbyKd3LyCOlJZxnlEmXg3GL4RUmIRti97oVc2vbB08_ut4LJGpNJ0cKUZ5ND2wplfDBW/exec";
+const GOOGLE_SHEET_URL = "https://script.google.com/macros/s/AKfycbxSjGh8GCoJY241vQIRlE1xN0dMPGW7jwNOlO_BkcFQ67Si5StEO1s0fytuUVO44V36/exec";
 
-async function sendToSheet(data){
-  try{
-    await fetch(GOOGLE_SHEET_URL,{
-      method:"POST",
-      mode:"no-cors",
-      headers:{"Content-Type":"application/json"},
+async function sendToSheet(data) {
+  console.log("🚀 Sending data to Sheets:", data);
+  try {
+    const res = await fetch(GOOGLE_SHEET_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data)
     });
-    console.log("✅ Sent to Google Sheet", data);
-  }catch(err){
-    console.error("❌ Sheet send error:", err);
+    const txt = await res.text();
+    console.log("✅ Response text:", txt);
+  } catch (err) {
+    console.error("❌ Error sending to Google Sheet:", err);
   }
 }
 
