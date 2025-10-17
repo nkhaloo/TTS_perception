@@ -5,110 +5,27 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Perception Experiment</title>
 <style>
-body {
-  font-family: sans-serif;
-  background: #f5f5f5;
-  margin: 0;
-  padding: 20px;
-}
-.card {
-  background: white;
-  border-radius: 8px;
-  padding: 20px;
-  max-width: 900px;
-  margin: 0 auto;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-}
+body { font-family: sans-serif; background: #f5f5f5; margin: 0; padding: 20px; }
+.card { background: #fff; border-radius: 8px; padding: 20px; max-width: 900px; margin: 0 auto; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
 h1 { font-size: 24px; margin-top: 0; }
-.btn {
-  padding: 10px 16px;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  margin-right: 8px;
-}
-.btn-primary { background: #007acc; color: white; }
-.btn-primary:disabled {
-  background: #a0aec0;
-  color: #e2e8f0;
-  cursor: not-allowed;
-}
-.btn-secondary { background: #ccc; color: black; }
+.btn { padding: 10px 16px; border: none; border-radius: 6px; cursor: pointer; margin-right: 8px; }
+.btn-primary { background: #007acc; color: #fff; }
+.btn-primary:disabled { background: #a0aec0; color: #e2e8f0; cursor: not-allowed; }
+.btn-secondary { background: #ccc; color: #000; }
 .hidden { display: none; }
-.progress {
-  height: 8px;
-  background: #eee;
-  border-radius: 4px;
-  margin: 10px 0;
-  overflow: hidden;
-}
-.progress > div {
-  height: 100%;
-  background: #007acc;
-  width: 0;
-  transition: width .2s ease;
-}
-textarea {
-  width: 100%;
-  height: 100px;
-  margin-top: 8px;
-  padding: 6px;
-  border-radius: 4px;
-  border: 1px solid #ccc;
-  font-family: sans-serif;
-}
-.question-block {
-  margin: 20px 0;
-  padding: 12px;
-  background: #f9f9f9;
-  border-radius: 6px;
-  border: 1px solid #ddd;
-}
-.question-block p {
-  margin: 0 0 8px 0;
-  font-weight: bold;
-}
-.question-block label {
-  display: block;
-  margin: 4px 0;
-}
+.progress { height: 8px; background: #eee; border-radius: 4px; margin: 10px 0; overflow: hidden; }
+.progress > div { height: 100%; background: #007acc; width: 0; transition: width .2s ease; }
+textarea { width: 100%; height: 100px; margin-top: 8px; padding: 6px; border-radius: 4px; border: 1px solid #ccc; font-family: sans-serif; }
+.question-block { margin: 20px 0; padding: 12px; background: #f9f9f9; border-radius: 6px; border: 1px solid #ddd; }
+.question-block p { margin: 0 0 8px 0; font-weight: bold; }
+.question-block label { display: block; margin: 4px 0; }
+
 /* Slider styling */
-input[type="range"] {
-  -webkit-appearance: none;
-  width: 100%;
-  height: 8px;
-  border-radius: 5px;
-  background: #ddd;
-  outline: none;
-  cursor: pointer;
-}
-input[type="range"]::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  width: 18px; height: 18px;
-  border-radius: 50%;
-  background: #aaa;
-  cursor: pointer;
-  margin-top: -5px;
-  transition: background 0.2s;
-}
+input[type="range"] { -webkit-appearance: none; width: 100%; height: 8px; border-radius: 5px; background: #ddd; outline: none; cursor: pointer; }
+input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%; background: #aaa; cursor: pointer; margin-top: -5px; transition: background .2s; }
 input[type="range"].active::-webkit-slider-thumb { background: #007bff; }
-input[type="range"]::-moz-range-thumb {
-  width: 18px; height: 18px; border-radius: 50%; background: #aaa;
-  transition: background 0.2s; cursor: pointer;
-}
-input[type="range"].active::-moz-range-thumb { background: #007bff; }
-.scale-labels {
-  display: flex;
-  justify-content: space-between;
-  font-size: 12px;
-  color: #555;
-  margin-top: 6px;
-}
-.scale-labels span {
-  flex: 1;
-  text-align: center;
-  white-space: nowrap;
-}
+.scale-labels { display: flex; justify-content: space-between; font-size: 12px; color: #555; margin-top: 6px; }
+.scale-labels span { flex: 1; text-align: center; white-space: nowrap; }
 </style>
 </head>
 <body>
@@ -117,15 +34,15 @@ input[type="range"].active::-moz-range-thumb { background: #007bff; }
 <div class="card" id="screen-consent">
   <h1>Intro and Consent</h1>
   <p>Thank you for participating!</p>
-  <p>We are testing A.I. generated voices trained on multiple dialects, voices, and genders, so your input about these traits is important for the continued development of voice assistants.</p>
-  <p>This experiment will be somewhat repetitive — please pay close attention to each trial.</p>
+  <p>We are testing AI-generated voices trained on multiple dialects, voices, and genders. Your input is important for improving voice assistants.</p>
+  <p>This experiment may feel repetitive — please pay close attention to each trial.</p>
   <p>Before starting, please read the <a href="#" target="_blank">Informed Consent Form</a>, then check the box below once done.</p>
   <label><input type="checkbox" id="consentCheck"> I consent to participate</label>
   <br><br>
   <button class="btn btn-primary" id="consentBtn" disabled>Continue</button>
 </div>
 
-<!-- Audio Attention Check (reused throughout, including right after consent) -->
+<!-- Audio Attention Check -->
 <div class="card hidden" id="screen-audiocheck">
   <button class="btn btn-primary" id="playAudioCheckBtn">Play Audio</button>
   <audio id="audioCheckPlayer"></audio>
@@ -159,7 +76,7 @@ input[type="range"].active::-moz-range-thumb { background: #007bff; }
 <!-- Feedback -->
 <div class="card hidden" id="screen-feedback">
   <h1>Final Feedback</h1>
-  <textarea id="feedbackText"></textarea>
+  <textarea id="feedbackText" placeholder="Anything you want to tell us about the experience?"></textarea>
   <button class="btn btn-primary" id="feedbackNextBtn">Submit</button>
 </div>
 
@@ -170,9 +87,7 @@ input[type="range"].active::-moz-range-thumb { background: #007bff; }
 </div>
 
 <script>
-/* ===========================
-   Helpers / Visuals
-=========================== */
+/* ========== Helpers ========== */
 function setSliderBackground(slider){
   if(!slider.classList.contains('active')){slider.style.background='#ddd';return;}
   const min=Number(slider.min),max=Number(slider.max),val=Number(slider.value);
@@ -181,17 +96,14 @@ function setSliderBackground(slider){
 }
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
 
-/* ===========================
-   Config (updated for .mp3 + new paths)
-=========================== */
+/* ========== Config ========== */
 const CONFIG={
-  // Local base for experiment sound files
-  assetsBase:'/Users/noahkhaloo/Desktop/AAE_AI/data/soundfiles',
-  // Attention check audio base
-  attnBase:'/Users/noahkhaloo/Desktop/AAE_AI/experiment/audio_check',
-  stimuliPersonality:['passage'], // personality uses "passage"
+  // use hosted/relative paths; avoid absolute file-system paths
+  assetsBase:'./data/soundfiles',
+  attnBase:'./audio_check',
+  stimuliPersonality:['passage'],
   stimuliRace:['central','fronting','mono','raising'],
-  suffix:'.mp3', // switched from .wav to .mp3
+  suffix:'.mp3',
   questions:{
     Personality:[
       "How friendly does this speaker sound?",
@@ -209,54 +121,31 @@ const CONFIG={
       {type:"likert",text:"How feminine or masculine does the AI voice sound?",scaleMin:1,scaleMax:7}
     ]
   },
-  // Removed old CONFIG.attnChecks (text-based) entirely
   bins:['BF','BM','WF','WM'],
   numsPerBin:8
 };
 
-/* ===========================
-   Global State
-=========================== */
-const State={
-  blocks:{},
-  order:[],
-  currentBlock:null,
-  trialIndex:0,
-  audioFinished:false,
-  attnQueue:[] // will hold 22 shuffled attention-check URLs
-};
+/* ========== State ========== */
+const State={ blocks:{}, order:[], currentBlock:null, trialIndex:0, audioFinished:false, attnQueue:[], responses:[] };
 
-/* ===========================
-   Consent -> First Audio Attention Check
-=========================== */
-document.getElementById('consentCheck').onchange=e=>{
+/* ========== Consent → First Attention Check ========== */
+document.getElementById('consentCheck').addEventListener('change', e=>{
   document.getElementById('consentBtn').disabled=!e.target.checked;
-};
-document.getElementById('consentBtn').onclick=()=>{
-  // Hide consent, show audio attention check #1
+});
+document.getElementById('consentBtn').addEventListener('click', ()=>{
   document.getElementById('screen-consent').classList.add('hidden');
-  prepareAttentionQueue(); // build & shuffle 22 items
-  showAudioAttentionCheck(()=>{ // after first attention check, start experiment
-    startExperiment();
-  });
-};
+  prepareAttentionQueue();
+  showAudioAttentionCheck(()=>startExperiment());
+});
 
-
-/* ===========================
-   Attention Check Utilities
-=========================== */
+/* ========== Attention Check Utilities ========== */
 function prepareAttentionQueue(){
   const urls=[];
-  for(let i=1;i<=22;i++){
-    urls.push(`${CONFIG.attnBase}/${i}.mp3`);
-  }
+  for(let i=1;i<=22;i++){ urls.push(`${CONFIG.attnBase}/${i}.mp3`); }
   State.attnQueue = shuffle(urls);
 }
 function nextAttentionAudio(){
-  if(State.attnQueue.length===0){
-    // Safety: rebuild if somehow exhausted
-    prepareAttentionQueue();
-  }
+  if(State.attnQueue.length===0){ prepareAttentionQueue(); }
   return State.attnQueue.shift();
 }
 function showAudioAttentionCheck(onContinue){
@@ -266,15 +155,11 @@ function showAudioAttentionCheck(onContinue){
   const input=document.getElementById('audioCheckResponse');
   const nextBtn=document.getElementById('audioCheckNextBtn');
 
-  // Reset UI
   input.value=""; nextBtn.disabled=true;
   playBtn.disabled=false; playBtn.textContent='Play Audio';
-
-  // Load next randomized attention-check audio
   audio.src = nextAttentionAudio();
   audio.currentTime = 0;
 
-  // Wire events
   playBtn.onclick=async()=>{
     try{ playBtn.disabled=true; playBtn.textContent='Playing...'; await audio.play(); }
     catch{ playBtn.disabled=false; playBtn.textContent='Play Audio';}
@@ -283,23 +168,17 @@ function showAudioAttentionCheck(onContinue){
   input.oninput=()=>{ nextBtn.disabled = !input.value.trim(); };
 
   nextBtn.onclick=()=>{
-    // (You can log input.value here if needed)
     card.classList.add('hidden');
     onContinue && onContinue();
   };
 
-  // Show card
   card.classList.remove('hidden');
 }
 
-/* ===========================
-   Stimuli Construction
-=========================== */
+/* ========== Stimuli Construction ========== */
 function buildAllSpeakers(){
   const s=[];
-  for(const b of CONFIG.bins){
-    for(let n=1;n<=CONFIG.numsPerBin;n++){ s.push(`${b}${n}`); }
-  }
+  for(const b of CONFIG.bins){ for(let n=1;n<=CONFIG.numsPerBin;n++){ s.push(`${b}${n}`); } }
   return s;
 }
 function sampleSpeakersPerBlock(all){
@@ -314,12 +193,9 @@ function buildBlockTrials(speakers,stimuliList,blockName){
   const out=[];
   for(const sp of speakers){
     for(const st of stimuliList){
-      // NOTE: "passage" folder is singular now
       const folder=(st==='passage')?'passage':st;
       out.push({
-        block:blockName,
-        speaker:sp,
-        stimulus:st,
+        block:blockName, speaker:sp, stimulus:st,
         url:`${CONFIG.assetsBase}/${folder}/${sp}_${st}${CONFIG.suffix}`
       });
     }
@@ -337,9 +213,7 @@ function startExperiment(){
   renderBlock('Personality');
 }
 
-/* ===========================
-   Block / Trial Rendering
-=========================== */
+/* ========== Block / Trial Rendering ========== */
 const block=document.getElementById('screen-block');
 const progressBar=document.getElementById('progressBar');
 const player=document.getElementById('player');
@@ -373,28 +247,31 @@ function renderQuestions(blockName){
       questionsContainer.appendChild(div);
     });
   }
+  // Slider & radio listeners
   document.querySelectorAll('.slider').forEach(sl=>{
     setSliderBackground(sl);
-    sl.oninput=()=>{sl.dataset.touched="true";sl.classList.add('active');setSliderBackground(sl);updateNextButtonState();};
+    sl.oninput=()=>{ sl.dataset.touched="true"; sl.classList.add('active'); setSliderBackground(sl); updateNextButtonState(); };
   });
   document.querySelectorAll('input[type=radio]').forEach(inp=>inp.onchange=updateNextButtonState);
 }
-function disableInputs(disabled){document.querySelectorAll('#questionsContainer input').forEach(inp=>inp.disabled=disabled);}
+function disableInputs(disabled){ document.querySelectorAll('#questionsContainer input').forEach(inp=>inp.disabled=disabled); }
 function allAnswered(){
-  if(State.currentBlock==="Personality") return Array.from(document.querySelectorAll('.slider')).every(sl=>sl.dataset.touched==="true");
+  if(State.currentBlock==="Personality"){
+    return Array.from(document.querySelectorAll('.slider')).every(sl=>sl.dataset.touched==="true");
+  }
   if(State.currentBlock==="Race"){
     const sliders=Array.from(document.querySelectorAll('.slider'));
     const radios=Array.from(document.querySelectorAll('input[type=radio]'));
     const sliderOK=sliders.length===0||sliders.every(sl=>sl.dataset.touched==="true");
     const radioOK=radios.length===0||Array.from(document.querySelectorAll('.question-block')).every(b=>b.querySelector('input:checked'));
-    return sliderOK&&radioOK;
+    return sliderOK && radioOK;
   }
   return false;
 }
-function updateNextButtonState(){ nextBtn.disabled=!(State.audioFinished&&allAnswered()); }
+function updateNextButtonState(){ nextBtn.disabled = !(State.audioFinished && allAnswered()); }
 function resetAnswers(){
-  document.querySelectorAll('.slider').forEach(sl=>{sl.value=4;sl.dataset.touched="false";sl.disabled=true;setSliderBackground(sl);});
-  document.querySelectorAll('input[type=radio]').forEach(r=>{r.checked=false;r.disabled=true;});
+  document.querySelectorAll('.slider').forEach(sl=>{ sl.value=4; sl.dataset.touched="false"; sl.disabled=true; setSliderBackground(sl); });
+  document.querySelectorAll('input[type=radio]').forEach(r=>{ r.checked=false; r.disabled=true; });
   nextBtn.disabled=true;
 }
 function currentTrials(){ return State.blocks[State.currentBlock]; }
@@ -428,50 +305,56 @@ function renderBlock(name){
   State.trialIndex=0;
   block.classList.remove('hidden');
   updateTrialUI();
-  nextBtn.onclick=handleNext;
-  document.getElementById('skipBtn').onclick=()=>{ State.audioFinished=true; handleNext(); };
 }
 
-/* ===========================
-   Attention Check Insertion Rules
-   - 1 after consent (already handled)
-   - Personality: after every 4 trials (4 total for 16 trials)
-   - Between Personality and Race: 1
-   - Race: after every 4 trials (16 total for 64 trials)
-=========================== */
-function handleNext() {
-  // 1️⃣ Collect the just-finished trial and their answers
-  const trial = currentTrial(); // get info about this trial
-  const answers = collectAnswersFromUI ? collectAnswersFromUI() : {}; // if you already have this helper, use it
+/* ========== handleNext + Attention Check Insertion ========== */
+function handleNext(){
+  const answers = {};
+  const trial = currentTrial();
 
-  // 2️⃣ Send one row to Google Sheets
-  if (trial) {
-    sendToGoogleSheet({
-      participantID: State.participantID,
-      block: trial.block,
-      speaker: trial.speaker,
-      stimulus: trial.stimulus,
-      answers: answers
+  if (State.currentBlock === "Personality") {
+    document.querySelectorAll('.question-block').forEach((blk) => {
+      const qText = blk.querySelector('p')?.textContent || '';
+      const slider = blk.querySelector('input[type=range]');
+      if (slider) answers[qText] = slider.value;
+    });
+  } else if (State.currentBlock === "Race") {
+    document.querySelectorAll('.question-block').forEach((blk) => {
+      const qText = blk.querySelector('p')?.textContent || '';
+      const selected = blk.querySelector('input:checked');
+      if (selected) answers[qText] = selected.value;
+      const slider = blk.querySelector('input[type=range]');
+      if (slider) answers[qText] = slider.value;
     });
   }
 
-  // 3️⃣ Proceed with the original logic
+  // Save trial
+  State.responses.push({
+    block: State.currentBlock,
+    trialIndex: State.trialIndex,
+    speaker: trial.speaker,
+    stimulus: trial.stimulus,
+    ...answers
+  });
+
+  // Advance index and compute boundaries
   State.trialIndex++;
-  const total = currentTrials().length;
+  const total=currentTrials().length;
   const atEnd = State.trialIndex >= total;
   const mod4 = (State.trialIndex % 4 === 0);
 
-  const pendingChecks = [];
-  if (State.currentBlock === 'Personality' && mod4) pendingChecks.push('post-trial');
-  if (atEnd && State.currentBlock === 'Personality') pendingChecks.push('between-blocks');
-  if (State.currentBlock === 'Race' && mod4) pendingChecks.push('post-trial');
+  // Decide pending attention checks
+  const pendingChecks=[];
+  if(State.currentBlock==='Personality' && mod4){ pendingChecks.push('post-trial'); }
+  if(atEnd && State.currentBlock==='Personality'){ pendingChecks.push('between-blocks'); }
+  if(State.currentBlock==='Race' && mod4){ pendingChecks.push('post-trial'); }
 
-  const proceedAfterChecks = () => {
-    if (State.trialIndex < total) {
+  const proceedAfterChecks=()=>{
+    if(State.trialIndex < total){
       updateTrialUI();
     } else {
-      const idx = State.order.indexOf(State.currentBlock);
-      if (idx === 0) {
+      const idx=State.order.indexOf(State.currentBlock);
+      if(idx===0){
         renderBlock('Race');
       } else {
         block.classList.add('hidden');
@@ -480,97 +363,96 @@ function handleNext() {
     }
   };
 
-  if (pendingChecks.length > 0) {
-    const runSeq = (i) => {
-      if (i >= pendingChecks.length) {
+  if(pendingChecks.length>0){
+    const runSeq=(i)=>{
+      if(i>=pendingChecks.length){
         block.classList.remove('hidden');
         proceedAfterChecks();
         return;
       }
-      showAudioAttentionCheck(() => runSeq(i + 1));
+      showAudioAttentionCheck(()=>runSeq(i+1));
     };
     block.classList.add('hidden');
     runSeq(0);
   } else {
-    if (State.trialIndex < total) {
-      updateTrialUI();
-    } else {
-      const idx = State.order.indexOf(State.currentBlock);
-      if (idx === 0) {
-        renderBlock('Race');
-      } else {
-        block.classList.add('hidden');
-        renderDemographics();
-      }
+    if(State.trialIndex < total){ updateTrialUI(); }
+    else {
+      const idx=State.order.indexOf(State.currentBlock);
+      if(idx===0){ renderBlock('Race'); }
+      else { block.classList.add('hidden'); renderDemographics(); }
     }
   }
 }
 
-
-/* ===========================
-   Demographics / Feedback
-=========================== */
+/* ========== Demographics / Feedback ========== */
 function renderDemographics(){
   const demo=document.getElementById('screen-demographics');
   demo.classList.remove('hidden');
   let html="";
+
   html+=`<div class="question-block"><p>Please select your age range.</p>`;
   ["18–24","25–34","35–44","45–54","55+"].forEach(opt=>{html+=`<label><input type="radio" name="age" value="${opt}"> ${opt}</label>`;});
   html+=`</div>`;
+
   html+=`<div class="question-block"><p>Which race/ethnicities do you most strongly identify with? (Check all that apply)</p>`;
   ["Asian American","Black American","Hispanic/Latino American","White American","Native American or other Indigenous culture","Other"].forEach(opt=>{html+=`<label><input type="checkbox" name="ethnicity" value="${opt}"> ${opt}</label>`;});
   html+=`</div>`;
+
   html+=`<div class="question-block"><p>What regional dialect do you believe is closest to the way you speak?</p>`;
   ["Midwestern U.S.","Northeastern U.S.","Northwestern U.S.","Southeastern U.S.","Southwestern U.S."].forEach(opt=>{html+=`<label><input type="radio" name="dialect" value="${opt}"> ${opt}</label>`;});
   html+=`</div>`;
+
   html+=`<div class="question-block"><p>What is/are your first language(s)?</p>`;
   ["English","English and another language"].forEach(opt=>{
     html+=`<label><input type="radio" name="firstlang" value="${opt}"> ${opt}</label>`;
   });
   html+=`<div id="otherLangBox" class="hidden"><p>Please enter the language(s) besides English that you grew up speaking:</p><textarea id="otherLangText"></textarea></div></div>`;
+
   html+=`<div class="question-block"><p>What is your gender?</p>`;
   ["Male","Female","Non-binary"].forEach(opt=>{html+=`<label><input type="radio" name="gender" value="${opt}"> ${opt}</label>`;});
   html+=`</div>`;
+
   html+=`<div class="question-block"><p>Do you have any speech or hearing disorders?</p>`;
   ["No","Yes"].forEach(opt=>{html+=`<label><input type="radio" name="speech" value="${opt}"> ${opt}</label>`;});
   html+=`<div id="speechDescBox" class="hidden"><p>Please briefly describe the speech or hearing disorder:</p><textarea id="speechDescText"></textarea></div></div>`;
+
   html+=`<div class="question-block"><p>Have you been diagnosed as neurodivergent by a medical professional?</p>`;
   ["No","Yes"].forEach(opt=>{html+=`<label><input type="radio" name="neuro" value="${opt}"> ${opt}</label>`;});
   html+=`<div id="neuroDescBox" class="hidden"><p>Please briefly state what kind of neurodivergence you have been diagnosed with:</p><textarea id="neuroDescText"></textarea></div></div>`;
+
   html+=`<div class="question-block"><p>Which technologies do you use regularly?</p>`;
   ["ChatGPT Voice Assistant","Google Gemini Voice","Amazon Alexa","Apple Siri","Microsoft Cortana","Voice-based navigation apps","Other text-to-speech software","None of the above"].forEach(opt=>{html+=`<label><input type="checkbox" name="tech" value="${opt}"> ${opt}</label>`;});
   html+=`</div>`;
+
   html+=`<div class="question-block"><p>How often do you use AI-based software or AI voice assistants?</p>`;
   ["Never","Less than once per week","A few times per week","About once per day","Several times per day"].forEach(opt=>{html+=`<label><input type="radio" name="aiuse" value="${opt}"> ${opt}</label>`;});
   html+=`</div>`;
+
   html+=`<div class="question-block"><p>What is your attitude towards AI-based software or AI voice assistants?</p>`;
   for(let v=1;v<=7;v++){let label="";if(v===1)label="Very negative";if(v===4)label="Neutral";if(v===7)label="Very positive";html+=`<label><input type="radio" name="aiatt" value="${v}"> ${v} ${label}</label>`;}
   html+=`</div>`;
+
   document.getElementById('demoQuestions').innerHTML=html;
+
+  // Conditional text boxes
+  function conditional(name, triggerVal, boxId, textareaId){
+    const inputs=document.querySelectorAll(`input[name="${name}"]`);
+    inputs.forEach(inp=>{
+      inp.addEventListener('change', ()=>{
+        const show = inp.checked && inp.value===triggerVal;
+        const box=document.getElementById(boxId);
+        if(show){ box.classList.remove('hidden'); }
+        else { box.classList.add('hidden'); if(textareaId){ const t=document.getElementById(textareaId); if(t) t.value=""; } }
+        updateBtn();
+      });
+    });
+  }
+  conditional('firstlang','English and another language','otherLangBox','otherLangText');
+  conditional('speech','Yes','speechDescBox','speechDescText');
+  conditional('neuro','Yes','neuroDescBox','neuroDescText');
 
   const btn=document.getElementById('demoNextBtn');
 
-  // Conditional visibility for text boxes
-  function toggleConditional(name,val,box){
-    document.querySelectorAll(`input[name="${name}"]`).forEach(inp=>
-      inp.addEventListener('change',()=>{
-        const b=document.getElementById(box);
-        if(inp.checked && inp.value===val){
-          b.classList.remove('hidden');
-        } else if(inp.checked){
-          b.classList.add('hidden');
-          b.querySelector('textarea').value="";
-        }
-        updateBtn();
-      })
-    );
-  }
-
-  toggleConditional('firstlang','English and another language','otherLangBox');
-  toggleConditional('speech','Yes','speechDescBox');
-  toggleConditional('neuro','Yes','neuroDescBox');
-
-  // Validation logic
   function allDemoAnswered(){
     const age=document.querySelector('input[name="age"]:checked');
     const eth=document.querySelectorAll('input[name="ethnicity"]:checked').length>0;
@@ -585,14 +467,12 @@ function renderDemographics(){
 
     if(!age||!eth||!dialect||!gender||!first||!speech||!neuro||!tech||!aiuse||!aiatt) return false;
 
-    // Require text input when any conditional box is visible
     if(first.value==="English and another language" && !document.getElementById('otherLangText').value.trim()) return false;
     if(speech.value==="Yes" && !document.getElementById('speechDescText').value.trim()) return false;
     if(neuro.value==="Yes" && !document.getElementById('neuroDescText').value.trim()) return false;
 
     return true;
   }
-
   function updateBtn(){ btn.disabled=!allDemoAnswered(); }
 
   document.querySelectorAll('#demoQuestions input,#demoQuestions textarea').forEach(el=>{
@@ -601,7 +481,6 @@ function renderDemographics(){
   });
 
   btn.disabled = true;
-
   btn.onclick=()=>{
     if(allDemoAnswered()){
       demo.classList.add('hidden');
@@ -612,54 +491,46 @@ function renderDemographics(){
   };
 }
 
-
-document.getElementById('feedbackNextBtn').onclick=()=>{
+/* ========== Feedback + Submit to Google Sheets ========== */
+document.getElementById('feedbackNextBtn').onclick = async () => {
+  const feedback = document.getElementById('feedbackText').value.trim();
+  const participantData = {
+    timestamp: new Date().toISOString(),
+    participantID: Math.random().toString(36).substring(2,10),
+    feedback,
+    responses: State.responses
+  };
+  await sendToGoogleSheet(participantData);
   document.getElementById('screen-feedback').classList.add('hidden');
   document.getElementById('screen-finish').classList.remove('hidden');
 };
 
-// ======================
-// Google Sheets Connection
-// ======================
-
-const SHEET_URL = "https://script.google.com/macros/s/AKfycbxWQdPb0qYvldvH-vwIy41oyd2FDIbGLKheKa8CtCSs4wCdfS_AyJQa8fvDibtPIIkF/exec";
-
-// Give each participant a random anonymous ID
-State.participantID = "P_" + Date.now() + "_" + Math.random().toString(36).slice(2, 8);
-
-// Function that sends one row of data to the Sheet
-async function sendToGoogleSheet(row) {
+async function sendToGoogleSheet(data) {
+  // Replace with your own Apps Script web app URL
+  const url = "https://script.google.com/macros/s/AKfycbyFPSe8clSH5AsVyn4b8rX28E-iTeTx0Pb6hv2OkLIMT8eIHfcq5bds38IFynFnuWMGuQ/exec";
   try {
-    await fetch(SHEET_URL, {
+    await fetch(url, {
       method: "POST",
+      mode: "no-cors",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(row)
+      body: JSON.stringify(data)
     });
-    console.log("Saved to Google Sheets:", row);
+    console.log("✅ Data sent to Google Sheet");
   } catch (err) {
-    console.error("Error sending to Google Sheets:", err);
+    console.error("❌ Error sending data:", err);
   }
 }
 
-function collectAnswersFromUI() {
-  const out = {};
-  document.querySelectorAll('#questionsContainer .question-block').forEach(block => {
-    const q = (block.querySelector('p')?.textContent || "").trim();
+/* ========== Global wiring (for any inline calls, and buttons) ========== */
+window.handleNext = handleNext; // if you ever call it inline elsewhere
+window.State = State;           // Skip needed this previously; safe to expose
 
-    const checked = block.querySelector('input[type="radio"]:checked');
-    if (checked) {
-      out[q] = checked.value;
-      return;
-    }
-
-    const slider = block.querySelector('input[type="range"]');
-    if (slider) {
-      out[q] = Number(slider.value);
-    }
-  });
-  return out;
-}
-
+document.getElementById('nextBtn').addEventListener('click', handleNext);
+document.getElementById('skipBtn').addEventListener('click', ()=>{
+  // Force-advance regardless of audio end/answers (pilot-only behavior)
+  State.audioFinished = true;
+  handleNext();
+});
 </script>
 </body>
 </html>
