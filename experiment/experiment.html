@@ -185,13 +185,11 @@ function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random
    Config (updated for .mp3 + new paths)
 =========================== */
 const CONFIG = {
-  assetsBase: '../data/soundfiles',  // 👈 points to /AAE_AI/data/soundfiles/
-  attnBase: 'audio_check',           // 👈 inside /AAE_AI/experiment/
-  stimuliPersonality:['passage'],
-  stimuliRace:['central','fronting','mono','raising'],
-  suffix:'.mp3',
-  bins:['BF','BM','WF','WM'],
-  numsPerBin:8,
+  assetsBase: '../data/soundfiles',   // go up one level from /experiment/
+  attnBase: './audio_check',          // inside the current folder
+  stimuliPersonality: ['passage'],
+  stimuliRace: ['central','fronting','mono','raising'],
+  suffix: '.mp3',
   questions:{
     Personality:[
       "How friendly does this speaker sound?",
