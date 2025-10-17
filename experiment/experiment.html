@@ -184,14 +184,14 @@ function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random
 /* ===========================
    Config (updated for .mp3 + new paths)
 =========================== */
-const CONFIG={
-  // Local base for experiment sound files
-  assetsBase:'/Users/noahkhaloo/Desktop/AAE_AI/data/soundfiles',
-  // Attention check audio base
-  attnBase:'/Users/noahkhaloo/Desktop/AAE_AI/experiment/audio_check',
-  stimuliPersonality:['passage'], // personality uses "passage"
+const CONFIG = {
+  assetsBase: '../data/soundfiles',  // 👈 points to /AAE_AI/data/soundfiles/
+  attnBase: 'audio_check',           // 👈 inside /AAE_AI/experiment/
+  stimuliPersonality:['passage'],
   stimuliRace:['central','fronting','mono','raising'],
-  suffix:'.mp3', // switched from .wav to .mp3
+  suffix:'.mp3',
+  bins:['BF','BM','WF','WM'],
+  numsPerBin:8,
   questions:{
     Personality:[
       "How friendly does this speaker sound?",
