@@ -127,11 +127,10 @@ input[type="range"].active::-moz-range-thumb { background: #007bff; }
 
 <!-- Audio Attention Check (reused throughout, including right after consent) -->
 <div class="card hidden" id="screen-audiocheck">
-  <h1>Audio Check</h1>
   <button class="btn btn-primary" id="playAudioCheckBtn">Play Audio</button>
   <audio id="audioCheckPlayer"></audio>
   <div class="question-block">
-    <p>Type the word you heard:</p>
+    <p>Play the audio and type the answer to the question you heard:</p>
     <input type="text" id="audioCheckResponse" style="width:300px; padding:6px;">
   </div>
   <button class="btn btn-primary" id="audioCheckNextBtn" disabled>Continue</button>
@@ -511,12 +510,14 @@ function renderDemographics(){
   html+=`<div class="question-block"><p>What regional dialect do you believe is closest to the way you speak?</p>`;
   ["Midwestern U.S.","Northeastern U.S.","Northwestern U.S.","Southeastern U.S.","Southwestern U.S."].forEach(opt=>{html+=`<label><input type="radio" name="dialect" value="${opt}"> ${opt}</label>`;});
   html+=`</div>`;
+  html+=`<div class="question-block"><p>What is/are your first language(s)?</p>`;
+  ["English","English and another language"].forEach(opt=>{
+    html+=`<label><input type="radio" name="firstlang" value="${opt}"> ${opt}</label>`;
+  });
+  html+=`<div id="otherLangBox" class="hidden"><p>Please enter the language(s) besides English that you grew up speaking:</p><textarea id="otherLangText"></textarea></div></div>`;
   html+=`<div class="question-block"><p>What is your gender?</p>`;
   ["Male","Female","Non-binary"].forEach(opt=>{html+=`<label><input type="radio" name="gender" value="${opt}"> ${opt}</label>`;});
   html+=`</div>`;
-  html+=`<div class="question-block"><p>What is/are your first language(s)?</p>`;
-  ["English only","English and another language","Another language only"].forEach(opt=>{html+=`<label><input type="radio" name="firstlang" value="${opt}"> ${opt}</label>`;});
-  html+=`<div id="otherLangBox" class="hidden"><p>Please enter the language(s) besides English that you grew up speaking:</p><textarea id="otherLangText"></textarea></div></div>`;
   html+=`<div class="question-block"><p>Do you have any speech or hearing disorders?</p>`;
   ["No","Yes"].forEach(opt=>{html+=`<label><input type="radio" name="speech" value="${opt}"> ${opt}</label>`;});
   html+=`<div id="speechDescBox" class="hidden"><p>Please briefly describe the speech or hearing disorder:</p><textarea id="speechDescText"></textarea></div></div>`;
@@ -535,19 +536,28 @@ function renderDemographics(){
   document.getElementById('demoQuestions').innerHTML=html;
 
   const btn=document.getElementById('demoNextBtn');
+
+  // Conditional visibility for text boxes
   function toggleConditional(name,val,box){
-    document.querySelectorAll(`input[name="${name}"]`).forEach(inp=>inp.addEventListener('change',()=>{
-      const b=document.getElementById(box);
-      if(inp.checked&&inp.value===val){b.classList.remove('hidden');}
-      else if(inp.checked){b.classList.add('hidden');b.querySelector('textarea').value="";}
-      updateBtn();
-    }));
+    document.querySelectorAll(`input[name="${name}"]`).forEach(inp=>
+      inp.addEventListener('change',()=>{
+        const b=document.getElementById(box);
+        if(inp.checked && inp.value===val){
+          b.classList.remove('hidden');
+        } else if(inp.checked){
+          b.classList.add('hidden');
+          b.querySelector('textarea').value="";
+        }
+        updateBtn();
+      })
+    );
   }
+
   toggleConditional('firstlang','English and another language','otherLangBox');
-  toggleConditional('firstlang','Another language only','otherLangBox');
   toggleConditional('speech','Yes','speechDescBox');
   toggleConditional('neuro','Yes','neuroDescBox');
 
+  // Validation logic
   function allDemoAnswered(){
     const age=document.querySelector('input[name="age"]:checked');
     const eth=document.querySelectorAll('input[name="ethnicity"]:checked').length>0;
@@ -559,35 +569,36 @@ function renderDemographics(){
     const tech=document.querySelectorAll('input[name="tech"]:checked').length>0;
     const aiuse=document.querySelector('input[name="aiuse"]:checked');
     const aiatt=document.querySelector('input[name="aiatt"]:checked');
-    if(!age||!eth||!dialect||!gender||!first||!speech||!neuro||!tech||!aiuse||!aiatt)return false;
-    if(first.value!=="English only"&&!document.getElementById('otherLangText').value.trim())return false;
-    if(speech.value==="Yes"&&!document.getElementById('speechDescText').value.trim())return false;
-    if(neuro.value==="Yes"&&!document.getElementById('neuroDescText').value.trim())return false;
+
+    if(!age||!eth||!dialect||!gender||!first||!speech||!neuro||!tech||!aiuse||!aiatt) return false;
+
+    // Require text input when any conditional box is visible
+    if(first.value==="English and another language" && !document.getElementById('otherLangText').value.trim()) return false;
+    if(speech.value==="Yes" && !document.getElementById('speechDescText').value.trim()) return false;
+    if(neuro.value==="Yes" && !document.getElementById('neuroDescText').value.trim()) return false;
+
     return true;
   }
+
   function updateBtn(){ btn.disabled=!allDemoAnswered(); }
+
   document.querySelectorAll('#demoQuestions input,#demoQuestions textarea').forEach(el=>{
     el.addEventListener('input',updateBtn);
     el.addEventListener('change',updateBtn);
   });
+
   btn.disabled = true;
 
-  function finalizeDemo() {
-    if (!btn.disabled) {
+  btn.onclick=()=>{
+    if(allDemoAnswered()){
       demo.classList.add('hidden');
       document.getElementById('screen-feedback').classList.remove('hidden');
     } else {
-      // In case it was never re-enabled due to event timing, re-check manually:
-      if (allDemoAnswered()) {
-        demo.classList.add('hidden');
-        document.getElementById('screen-feedback').classList.remove('hidden');
-      }
+      alert("Please complete all required questions before continuing.");
     }
-  }
-
-  btn.onclick = finalizeDemo;
-
+  };
 }
+
 
 document.getElementById('feedbackNextBtn').onclick=()=>{
   document.getElementById('screen-feedback').classList.add('hidden');
