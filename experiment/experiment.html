@@ -599,41 +599,11 @@ function renderDemographics(){
   };
 }
 
-// === FINAL FEEDBACK + GOOGLE SHEETS SAVE ===
-document.getElementById('feedbackNextBtn').onclick = async () => {
-  const feedback = document.getElementById('feedbackText').value.trim();
 
-  // Prepare data object for saving
-  const participantData = {
-    timestamp: new Date().toISOString(),
-    participantID: Math.random().toString(36).substring(2, 10),
-    feedback: feedback,
-    responses: State.responses || []
-  };
-
-  // Send to Google Sheets
-  await sendToGoogleSheet(participantData);
-
-  // Move to finish screen
+document.getElementById('feedbackNextBtn').onclick=()=>{
   document.getElementById('screen-feedback').classList.add('hidden');
   document.getElementById('screen-finish').classList.remove('hidden');
 };
-
-// === Function to send data to your Apps Script endpoint ===
-async function sendToGoogleSheet(data) {
-  const url = "https://script.google.com/macros/s/AKfycbziIHz8N7RP3jARIjoUJBjCGa1kfH0nuJbKF-He2teywlhh-hHoTMwNADKnNDqkZka9VQ/exec";
-  try {
-    await fetch(url, {
-      method: "POST",
-      mode: "no-cors",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data)
-    });
-    console.log("✅ Data sent to Google Sheet");
-  } catch (err) {
-    console.error("❌ Error sending data:", err);
-  }
-}
 </script>
 </body>
 </html>
