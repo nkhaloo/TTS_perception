@@ -1,0 +1,673 @@
+code,vowel,prec_sound,foll_sound,prec_boundary,post_boundary,lexical_category,voice,stressed_syllable,word,prec_word,foll_word
+1,a,b,g,x,x,noun,modal,y,bag,fresh,of
+2,a,s,t,x,x,noun,creaky,y,sat,lettuce,in
+3,a,k,b,x,x,noun,modal,y,cabbage,the,ketchup
+4,a,b,g,x,x,noun,modal,y,bag,fresh,of
+5,a,s,t,x,x,noun,creaky,y,sat,lettuce,in
+6,a,k,b,x,x,noun,modal,y,cabbage,the,ketchup
+7,a,b,g,x,x,noun,modal,y,bag,fresh,of
+8,a,s,t,x,x,noun,creaky,y,sat,lettuce,in
+9,a,k,b,x,x,noun,modal,y,cabbage,the,ketchup
+10,a,b,g,x,x,noun,modal,y,bag,fresh,of
+11,a,s,t,x,x,noun,creaky,y,sat,lettuce,in
+12,a,k,b,x,x,noun,modal,y,cabbage,the,ketchup
+13,a,b,g,x,x,noun,modal,y,bag,fresh,of
+14,a,s,t,x,x,noun,creaky,y,sat,lettuce,in
+15,a,k,b,x,x,noun,modal,y,cabbage,the,ketchup
+16,a,b,g,x,x,noun,modal,y,bag,fresh,of
+17,a,s,t,x,x,noun,creaky,y,sat,lettuce,in
+18,a,k,b,x,x,noun,modal,y,cabbage,the,ketchup
+19,a,b,g,x,x,noun,modal,y,bag,fresh,of
+20,a,s,t,x,x,noun,creaky,y,sat,lettuce,in
+21,a,k,b,x,x,noun,modal,y,cabbage,the,ketchup
+22,a,b,g,x,x,noun,modal,y,bag,fresh,of
+23,a,s,t,x,x,noun,creaky,y,sat,lettuce,in
+24,a,k,b,x,x,noun,modal,y,cabbage,the,ketchup
+25,a,b,g,x,x,noun,modal,y,bag,fresh,of
+26,a,s,t,x,x,noun,creaky,y,sat,lettuce,in
+27,a,k,b,x,x,noun,modal,y,cabbage,the,ketchup
+28,a,b,g,x,x,noun,modal,y,bag,fresh,of
+29,a,s,t,x,x,noun,creaky,y,sat,lettuce,in
+30,a,k,b,x,x,noun,modal,y,cabbage,the,ketchup
+31,a,b,g,x,x,noun,modal,y,bag,fresh,of
+32,a,s,t,x,x,noun,creaky,y,sat,lettuce,in
+33,a,k,b,x,x,noun,modal,y,cabbage,the,ketchup
+34,a,b,g,x,x,noun,modal,y,bag,fresh,of
+35,a,s,t,x,x,noun,creaky,y,sat,lettuce,in
+36,a,k,b,x,x,noun,modal,y,cabbage,the,ketchup
+37,a,b,g,x,x,noun,modal,y,bag,fresh,of
+38,a,s,t,x,x,noun,creaky,y,sat,lettuce,in
+39,a,k,b,x,x,noun,modal,y,cabbage,the,ketchup
+40,a,b,g,x,x,noun,modal,y,bag,fresh,of
+41,a,s,t,x,x,noun,creaky,y,sat,lettuce,in
+42,a,k,b,x,x,noun,modal,y,cabbage,the,ketchup
+43,a,b,g,x,x,noun,modal,y,bag,fresh,of
+44,a,s,t,x,x,noun,creaky,y,sat,lettuce,in
+45,a,k,b,x,x,noun,modal,y,cabbage,the,ketchup
+46,a,b,g,x,x,noun,modal,y,bag,fresh,of
+47,a,s,t,x,x,noun,creaky,y,sat,lettuce,in
+48,a,k,b,x,x,noun,modal,y,cabbage,the,ketchup
+49,a,b,g,x,x,noun,modal,y,bag,fresh,of
+50,a,s,t,x,x,noun,creaky,y,sat,lettuce,in
+51,a,k,b,x,x,noun,modal,y,cabbage,the,ketchup
+52,a,b,g,x,x,noun,modal,y,bag,fresh,of
+53,a,s,t,x,x,noun,creaky,y,sat,lettuce,in
+54,a,k,b,x,x,noun,modal,y,cabbage,the,ketchup
+55,a,b,g,x,x,noun,modal,y,bag,fresh,of
+56,a,s,t,x,x,noun,creaky,y,sat,lettuce,in
+57,a,k,b,x,x,noun,modal,y,cabbage,the,ketchup
+58,a,b,g,x,x,noun,modal,y,bag,fresh,of
+59,a,s,t,x,x,noun,creaky,y,sat,lettuce,in
+60,a,k,b,x,x,noun,modal,y,cabbage,the,ketchup
+61,a,b,g,x,x,noun,modal,y,bag,fresh,of
+62,a,s,t,x,x,noun,creaky,y,sat,lettuce,in
+63,a,k,b,x,x,noun,modal,y,cabbage,the,ketchup
+64,a,b,g,x,x,noun,modal,y,bag,fresh,of
+65,a,s,t,x,x,noun,creaky,y,sat,lettuce,in
+66,a,k,b,x,x,noun,modal,y,cabbage,the,ketchup
+67,a,b,g,x,x,noun,modal,y,bag,fresh,of
+68,a,s,t,x,x,noun,creaky,y,sat,lettuce,in
+69,a,k,b,x,x,noun,modal,y,cabbage,the,ketchup
+70,a,b,g,x,x,noun,modal,y,bag,fresh,of
+71,a,s,t,x,x,noun,creaky,y,sat,lettuce,in
+72,a,k,b,x,x,noun,modal,y,cabbage,the,ketchup
+73,a,b,g,x,x,noun,modal,y,bag,fresh,of
+74,a,s,t,x,x,noun,creaky,y,sat,lettuce,in
+75,a,k,b,x,x,noun,modal,y,cabbage,the,ketchup
+76,a,b,g,x,x,noun,modal,y,bag,fresh,of
+77,a,s,t,x,x,noun,creaky,y,sat,lettuce,in
+78,a,k,b,x,x,noun,modal,y,cabbage,the,ketchup
+79,a,b,g,x,x,noun,modal,y,bag,fresh,of
+80,a,s,t,x,x,noun,creaky,y,sat,lettuce,in
+81,a,k,b,x,x,noun,modal,y,cabbage,the,ketchup
+82,a,b,g,x,x,noun,modal,y,bag,fresh,of
+83,a,s,t,x,x,noun,creaky,y,sat,lettuce,in
+84,a,k,b,x,x,noun,modal,y,cabbage,the,ketchup
+85,a,b,g,x,x,noun,modal,y,bag,fresh,of
+86,a,s,t,x,x,noun,creaky,y,sat,lettuce,in
+87,a,k,b,x,x,noun,modal,y,cabbage,the,ketchup
+88,a,b,g,x,x,noun,modal,y,bag,fresh,of
+89,a,s,t,x,x,noun,creaky,y,sat,lettuce,in
+90,a,k,b,x,x,noun,modal,y,cabbage,the,ketchup
+91,a,b,g,x,x,noun,modal,y,bag,fresh,of
+92,a,s,t,x,x,noun,creaky,y,sat,lettuce,in
+93,a,k,b,x,x,noun,modal,y,cabbage,the,ketchup
+94,a,b,g,x,x,noun,modal,y,bag,fresh,of
+95,a,s,t,x,x,noun,creaky,y,sat,lettuce,in
+96,a,k,b,x,x,noun,modal,y,cabbage,the,ketchup
+97,ah,b,b,sentence,x,noun,modal,y,bob,na,took
+98,ah,d,g,x,x,noun,modal,y,dog,the,up
+99,ah,l,k,x,x,noun,modal,y,block,the,na
+100,ah,b,b,sentence,x,noun,modal,y,bob,na,took
+101,ah,d,g,x,x,noun,modal,y,dog,the,up
+102,ah,l,k,x,x,noun,modal,y,block,the,na
+103,ah,b,b,sentence,x,noun,modal,y,bob,na,took
+104,ah,d,g,x,x,noun,modal,y,dog,the,up
+105,ah,l,k,x,x,noun,modal,y,block,the,na
+106,ah,b,b,sentence,x,noun,modal,y,bob,na,took
+107,ah,d,g,x,x,noun,modal,y,dog,the,up
+108,ah,l,k,x,x,noun,modal,y,block,the,na
+109,ah,b,b,sentence,x,noun,modal,y,bob,na,took
+110,ah,d,g,x,x,noun,modal,y,dog,the,up
+111,ah,l,k,x,x,noun,modal,y,block,the,na
+112,ah,b,b,sentence,x,noun,modal,y,bob,na,took
+113,ah,d,g,x,x,noun,modal,y,dog,the,up
+114,ah,l,k,x,x,noun,modal,y,block,the,na
+115,ah,b,b,sentence,x,noun,modal,y,bob,na,took
+116,ah,d,g,x,x,noun,modal,y,dog,the,up
+117,ah,l,k,x,x,noun,modal,y,block,the,na
+118,ah,b,b,sentence,x,noun,modal,y,bob,na,took
+119,ah,d,g,x,x,noun,modal,y,dog,the,up
+120,ah,l,k,x,x,noun,modal,y,block,the,na
+121,ah,b,b,sentence,x,noun,modal,y,bob,na,took
+122,ah,d,g,x,x,noun,modal,y,dog,the,up
+123,ah,l,k,x,x,noun,modal,y,block,the,na
+124,ah,b,b,sentence,x,noun,modal,y,bob,na,took
+125,ah,d,g,x,x,noun,modal,y,dog,the,up
+126,ah,l,k,x,x,noun,modal,y,block,the,na
+127,ah,b,b,sentence,x,noun,modal,y,bob,na,took
+128,ah,d,g,x,x,noun,modal,y,dog,the,up
+129,ah,l,k,x,x,noun,modal,y,block,the,na
+130,ah,b,b,sentence,x,noun,modal,y,bob,na,took
+131,ah,d,g,x,x,noun,modal,y,dog,the,up
+132,ah,l,k,x,x,noun,modal,y,block,the,na
+133,ah,b,b,sentence,x,noun,modal,y,bob,na,took
+134,ah,d,g,x,x,noun,modal,y,dog,the,up
+135,ah,l,k,x,x,noun,modal,y,block,the,na
+136,ah,b,b,sentence,x,noun,modal,y,bob,na,took
+137,ah,d,g,x,x,noun,modal,y,dog,the,up
+138,ah,l,k,x,x,noun,modal,y,block,the,na
+139,ah,b,b,sentence,x,noun,modal,y,bob,na,took
+140,ah,d,g,x,x,noun,modal,y,dog,the,up
+141,ah,l,k,x,x,noun,modal,y,block,the,na
+142,ah,b,b,sentence,x,noun,modal,y,bob,na,took
+143,ah,d,g,x,x,noun,modal,y,dog,the,up
+144,ah,l,k,x,x,noun,modal,y,block,the,na
+145,ah,b,b,sentence,x,noun,modal,y,bob,na,took
+146,ah,d,g,x,x,noun,modal,y,dog,the,up
+147,ah,l,k,x,x,noun,modal,y,block,the,na
+148,ah,b,b,sentence,x,noun,modal,y,bob,na,took
+149,ah,d,g,x,x,noun,modal,y,dog,the,up
+150,ah,l,k,x,x,noun,modal,y,block,the,na
+151,ah,b,b,sentence,x,noun,modal,y,bob,na,took
+152,ah,d,g,x,x,noun,modal,y,dog,the,up
+153,ah,l,k,x,x,noun,modal,y,block,the,na
+154,ah,b,b,sentence,x,noun,modal,y,bob,na,took
+155,ah,d,g,x,x,noun,modal,y,dog,the,up
+156,ah,l,k,x,x,noun,modal,y,block,the,na
+157,ah,b,b,sentence,x,noun,modal,y,bob,na,took
+158,ah,d,g,x,x,noun,modal,y,dog,the,up
+159,ah,l,k,x,x,noun,modal,y,block,the,na
+160,ah,b,b,sentence,x,noun,modal,y,bob,na,took
+161,ah,d,g,x,x,noun,modal,y,dog,the,up
+162,ah,l,k,x,x,noun,modal,y,block,the,na
+163,ah,b,b,sentence,x,noun,modal,y,bob,na,took
+164,ah,d,g,x,x,noun,modal,y,dog,the,up
+165,ah,l,k,x,x,noun,modal,y,block,the,na
+166,ah,b,b,sentence,x,noun,modal,y,bob,na,took
+167,ah,d,g,x,x,noun,modal,y,dog,the,up
+168,ah,l,k,x,x,noun,modal,y,block,the,na
+169,ah,b,b,sentence,x,noun,modal,y,bob,na,took
+170,ah,d,g,x,x,noun,modal,y,dog,the,up
+171,ah,l,k,x,x,noun,modal,y,block,the,na
+172,ah,b,b,sentence,x,noun,modal,y,bob,na,took
+173,ah,d,g,x,x,noun,modal,y,dog,the,up
+174,ah,l,k,x,x,noun,modal,y,block,the,na
+175,ah,b,b,sentence,x,noun,modal,y,bob,na,took
+176,ah,d,g,x,x,noun,modal,y,dog,the,up
+177,ah,l,k,x,x,noun,modal,y,block,the,na
+178,ah,b,b,sentence,x,noun,modal,y,bob,na,took
+179,ah,d,g,x,x,noun,modal,y,dog,the,up
+180,ah,l,k,x,x,noun,modal,y,block,the,na
+181,ah,b,b,sentence,x,noun,modal,y,bob,na,took
+182,ah,d,g,x,x,noun,modal,y,dog,the,up
+183,ah,l,k,x,x,noun,modal,y,block,the,na
+184,ah,b,b,sentence,x,noun,modal,y,bob,na,took
+185,ah,d,g,x,x,noun,modal,y,dog,the,up
+186,ah,l,k,x,x,noun,modal,y,block,the,na
+187,ah,b,b,sentence,x,noun,modal,y,bob,na,took
+188,ah,d,g,x,x,noun,modal,y,dog,the,up
+189,ah,l,k,x,x,noun,modal,y,block,the,na
+190,ah,b,b,sentence,x,noun,modal,y,bob,na,took
+191,ah,d,g,x,x,noun,modal,y,dog,the,up
+192,ah,l,k,x,x,noun,modal,y,block,the,na
+193,ai,na,l,sentence,word,noun,creaky,y,I,na,like
+194,ai,l,k,x,x,verb,modal,y,like ,I,to
+195,ai,m,b,x,word,noun,modal,y,my ,for,birthday
+196,ai,na,l,sentence,word,noun,creaky,y,I,na,like
+197,ai,l,k,x,x,verb,modal,y,like ,I,to
+198,ai,m,b,x,word,noun,modal,y,my ,for,birthday
+199,ai,na,l,sentence,word,noun,creaky,y,I,na,like
+200,ai,l,k,x,x,verb,modal,y,like ,I,to
+201,ai,m,b,x,word,noun,modal,y,my ,for,birthday
+202,ai,na,l,sentence,word,noun,creaky,y,I,na,like
+203,ai,l,k,x,x,verb,modal,y,like ,I,to
+204,ai,m,b,x,word,noun,modal,y,my ,for,birthday
+205,ai,na,l,sentence,word,noun,creaky,y,I,na,like
+206,ai,l,k,x,x,verb,modal,y,like ,I,to
+207,ai,m,b,x,word,noun,modal,y,my ,for,birthday
+208,ai,na,l,sentence,word,noun,creaky,y,I,na,like
+209,ai,l,k,x,x,verb,modal,y,like ,I,to
+210,ai,m,b,x,word,noun,modal,y,my ,for,birthday
+211,ai,na,l,sentence,word,noun,creaky,y,I,na,like
+212,ai,l,k,x,x,verb,modal,y,like ,I,to
+213,ai,m,b,x,word,noun,modal,y,my ,for,birthday
+214,ai,na,l,sentence,word,noun,creaky,y,I,na,like
+215,ai,l,k,x,x,verb,modal,y,like ,I,to
+216,ai,m,b,x,word,noun,modal,y,my ,for,birthday
+217,ai,na,l,sentence,word,noun,creaky,y,I,na,like
+218,ai,l,k,x,x,verb,modal,y,like ,I,to
+219,ai,m,b,x,word,noun,modal,y,my ,for,birthday
+220,ai,na,l,sentence,word,noun,creaky,y,I,na,like
+221,ai,l,k,x,x,verb,modal,y,like ,I,to
+222,ai,m,b,x,word,noun,modal,y,my ,for,birthday
+223,ai,na,l,sentence,word,noun,creaky,y,I,na,like
+224,ai,l,k,x,x,verb,modal,y,like ,I,to
+225,ai,m,b,x,word,noun,modal,y,my ,for,birthday
+226,ai,na,l,sentence,word,noun,creaky,y,I,na,like
+227,ai,l,k,x,x,verb,modal,y,like ,I,to
+228,ai,m,b,x,word,noun,modal,y,my ,for,birthday
+229,ai,na,l,sentence,word,noun,creaky,y,I,na,like
+230,ai,l,k,x,x,verb,modal,y,like ,I,to
+231,ai,m,b,x,word,noun,modal,y,my ,for,birthday
+232,ai,na,l,sentence,word,noun,creaky,y,I,na,like
+233,ai,l,k,x,x,verb,modal,y,like ,I,to
+234,ai,m,b,x,word,noun,modal,y,my ,for,birthday
+235,ai,na,l,sentence,word,noun,creaky,y,I,na,like
+236,ai,l,k,x,x,verb,modal,y,like ,I,to
+237,ai,m,b,x,word,noun,modal,y,my ,for,birthday
+238,ai,na,l,sentence,word,noun,creaky,y,I,na,like
+239,ai,l,k,x,x,verb,modal,y,like ,I,to
+240,ai,m,b,x,word,noun,modal,y,my ,for,birthday
+241,ai,na,l,sentence,word,noun,creaky,y,I,na,like
+242,ai,l,k,x,x,verb,modal,y,like ,I,to
+243,ai,m,b,x,word,noun,modal,y,my ,for,birthday
+244,ai,na,l,sentence,word,noun,creaky,y,I,na,like
+245,ai,l,k,x,x,verb,modal,y,like ,I,to
+246,ai,m,b,x,word,noun,modal,y,my ,for,birthday
+247,ai,na,l,sentence,word,noun,creaky,y,I,na,like
+248,ai,l,k,x,x,verb,modal,y,like ,I,to
+249,ai,m,b,x,word,noun,modal,y,my ,for,birthday
+250,ai,na,l,sentence,word,noun,creaky,y,I,na,like
+251,ai,l,k,x,x,verb,modal,y,like ,I,to
+252,ai,m,b,x,word,noun,modal,y,my ,for,birthday
+253,ai,na,l,sentence,word,noun,creaky,y,I,na,like
+254,ai,l,k,x,x,verb,modal,y,like ,I,to
+255,ai,m,b,x,word,noun,modal,y,my ,for,birthday
+256,ai,na,l,sentence,word,noun,creaky,y,I,na,like
+257,ai,l,k,x,x,verb,modal,y,like ,I,to
+258,ai,m,b,x,word,noun,modal,y,my ,for,birthday
+259,ai,na,l,sentence,word,noun,creaky,y,I,na,like
+260,ai,l,k,x,x,verb,modal,y,like ,I,to
+261,ai,m,b,x,word,noun,modal,y,my ,for,birthday
+262,ai,na,l,sentence,word,noun,creaky,y,I,na,like
+263,ai,l,k,x,x,verb,modal,y,like ,I,to
+264,ai,m,b,x,word,noun,modal,y,my ,for,birthday
+265,ai,na,l,sentence,word,noun,creaky,y,I,na,like
+266,ai,l,k,x,x,verb,modal,y,like ,I,to
+267,ai,m,b,x,word,noun,modal,y,my ,for,birthday
+268,ai,na,l,sentence,word,noun,creaky,y,I,na,like
+269,ai,l,k,x,x,verb,modal,y,like ,I,to
+270,ai,m,b,x,word,noun,modal,y,my ,for,birthday
+271,ai,na,l,sentence,word,noun,creaky,y,I,na,like
+272,ai,l,k,x,x,verb,modal,y,like ,I,to
+273,ai,m,b,x,word,noun,modal,y,my ,for,birthday
+274,ai,na,l,sentence,word,noun,creaky,y,I,na,like
+275,ai,l,k,x,x,verb,modal,y,like ,I,to
+276,ai,m,b,x,word,noun,modal,y,my ,for,birthday
+277,ai,na,l,sentence,word,noun,creaky,y,I,na,like
+278,ai,l,k,x,x,verb,modal,y,like ,I,to
+279,ai,m,b,x,word,noun,modal,y,my ,for,birthday
+280,ai,na,l,sentence,word,noun,creaky,y,I,na,like
+281,ai,l,k,x,x,verb,modal,y,like ,I,to
+282,ai,m,b,x,word,noun,modal,y,my ,for,birthday
+283,ai,na,l,sentence,word,noun,creaky,y,I,na,like
+284,ai,l,k,x,x,verb,modal,y,like ,I,to
+285,ai,m,b,x,word,noun,modal,y,my ,for,birthday
+286,ai,na,l,sentence,word,noun,creaky,y,I,na,like
+287,ai,l,k,x,x,verb,modal,y,like ,I,to
+288,ai,m,b,x,word,noun,modal,y,my ,for,birthday
+289,e,r,ʃ,x,x,adjective,modal,y,fresh,big,bag
+290,e,l,ɾ,x,x,noun,modal,y,lettuce,of,sat
+291,e,k,tʃ,x,x,noun,modal,y,ketchup,the,na
+292,e,r,ʃ,x,x,adjective,modal,y,fresh,big,bag
+293,e,l,ɾ,x,x,noun,modal,y,lettuce,of,sat
+294,e,k,tʃ,x,x,noun,modal,y,ketchup,the,na
+295,e,r,ʃ,x,x,adjective,modal,y,fresh,big,bag
+296,e,l,ɾ,x,x,noun,modal,y,lettuce,of,sat
+297,e,k,tʃ,x,x,noun,modal,y,ketchup,the,na
+298,e,r,ʃ,x,x,adjective,modal,y,fresh,big,bag
+299,e,l,ɾ,x,x,noun,modal,y,lettuce,of,sat
+300,e,k,tʃ,x,x,noun,modal,y,ketchup,the,na
+301,e,r,ʃ,x,x,adjective,modal,y,fresh,big,bag
+302,e,l,ɾ,x,x,noun,modal,y,lettuce,of,sat
+303,e,k,tʃ,x,x,noun,modal,y,ketchup,the,na
+304,e,r,ʃ,x,x,adjective,modal,y,fresh,big,bag
+305,e,l,ɾ,x,x,noun,modal,y,lettuce,of,sat
+306,e,k,tʃ,x,x,noun,modal,y,ketchup,the,na
+307,e,r,ʃ,x,x,adjective,modal,y,fresh,big,bag
+308,e,l,ɾ,x,x,noun,modal,y,lettuce,of,sat
+309,e,k,tʃ,x,x,noun,modal,y,ketchup,the,na
+310,e,r,ʃ,x,x,adjective,modal,y,fresh,big,bag
+311,e,l,ɾ,x,x,noun,modal,y,lettuce,of,sat
+312,e,k,tʃ,x,x,noun,modal,y,ketchup,the,na
+313,e,r,ʃ,x,x,adjective,modal,y,fresh,big,bag
+314,e,l,ɾ,x,x,noun,modal,y,lettuce,of,sat
+315,e,k,tʃ,x,x,noun,modal,y,ketchup,the,na
+316,e,r,ʃ,x,x,adjective,modal,y,fresh,big,bag
+317,e,l,ɾ,x,x,noun,modal,y,lettuce,of,sat
+318,e,k,tʃ,x,x,noun,modal,y,ketchup,the,na
+319,e,r,ʃ,x,x,adjective,modal,y,fresh,big,bag
+320,e,l,ɾ,x,x,noun,modal,y,lettuce,of,sat
+321,e,k,tʃ,x,x,noun,modal,y,ketchup,the,na
+322,e,r,ʃ,x,x,adjective,modal,y,fresh,big,bag
+323,e,l,ɾ,x,x,noun,modal,y,lettuce,of,sat
+324,e,k,tʃ,x,x,noun,modal,y,ketchup,the,na
+325,e,r,ʃ,x,x,adjective,modal,y,fresh,big,bag
+326,e,l,ɾ,x,x,noun,modal,y,lettuce,of,sat
+327,e,k,tʃ,x,x,noun,modal,y,ketchup,the,na
+328,e,r,ʃ,x,x,adjective,modal,y,fresh,big,bag
+329,e,l,ɾ,x,x,noun,modal,y,lettuce,of,sat
+330,e,k,tʃ,x,x,noun,modal,y,ketchup,the,na
+331,e,r,ʃ,x,x,adjective,modal,y,fresh,big,bag
+332,e,l,ɾ,x,x,noun,modal,y,lettuce,of,sat
+333,e,k,tʃ,x,x,noun,modal,y,ketchup,the,na
+334,e,r,ʃ,x,x,adjective,modal,y,fresh,big,bag
+335,e,l,ɾ,x,x,noun,modal,y,lettuce,of,sat
+336,e,k,tʃ,x,x,noun,modal,y,ketchup,the,na
+337,e,r,ʃ,x,x,adjective,modal,y,fresh,big,bag
+338,e,l,ɾ,x,x,noun,modal,y,lettuce,of,sat
+339,e,k,tʃ,x,x,noun,modal,y,ketchup,the,na
+340,e,r,ʃ,x,x,adjective,modal,y,fresh,big,bag
+341,e,l,ɾ,x,x,noun,modal,y,lettuce,of,sat
+342,e,k,tʃ,x,x,noun,modal,y,ketchup,the,na
+343,e,r,ʃ,x,x,adjective,modal,y,fresh,big,bag
+344,e,l,ɾ,x,x,noun,modal,y,lettuce,of,sat
+345,e,k,tʃ,x,x,noun,modal,y,ketchup,the,na
+346,e,r,ʃ,x,x,adjective,modal,y,fresh,big,bag
+347,e,l,ɾ,x,x,noun,modal,y,lettuce,of,sat
+348,e,k,tʃ,x,x,noun,modal,y,ketchup,the,na
+349,e,r,ʃ,x,x,adjective,modal,y,fresh,big,bag
+350,e,l,ɾ,x,x,noun,modal,y,lettuce,of,sat
+351,e,k,tʃ,x,x,noun,modal,y,ketchup,the,na
+352,e,r,ʃ,x,x,adjective,modal,y,fresh,big,bag
+353,e,l,ɾ,x,x,noun,modal,y,lettuce,of,sat
+354,e,k,tʃ,x,x,noun,modal,y,ketchup,the,na
+355,e,r,ʃ,x,x,adjective,modal,y,fresh,big,bag
+356,e,l,ɾ,x,x,noun,modal,y,lettuce,of,sat
+357,e,k,tʃ,x,x,noun,modal,y,ketchup,the,na
+358,e,r,ʃ,x,x,adjective,modal,y,fresh,big,bag
+359,e,l,ɾ,x,x,noun,modal,y,lettuce,of,sat
+360,e,k,tʃ,x,x,noun,modal,y,ketchup,the,na
+361,e,r,ʃ,x,x,adjective,modal,y,fresh,big,bag
+362,e,l,ɾ,x,x,noun,modal,y,lettuce,of,sat
+363,e,k,tʃ,x,x,noun,modal,y,ketchup,the,na
+364,e,r,ʃ,x,x,adjective,modal,y,fresh,big,bag
+365,e,l,ɾ,x,x,noun,modal,y,lettuce,of,sat
+366,e,k,tʃ,x,x,noun,modal,y,ketchup,the,na
+367,e,r,ʃ,x,x,adjective,modal,y,fresh,big,bag
+368,e,l,ɾ,x,x,noun,modal,y,lettuce,of,sat
+369,e,k,tʃ,x,x,noun,modal,y,ketchup,the,na
+370,e,r,ʃ,x,x,adjective,modal,y,fresh,big,bag
+371,e,l,ɾ,x,x,noun,modal,y,lettuce,of,sat
+372,e,k,tʃ,x,x,noun,modal,y,ketchup,the,na
+373,e,r,ʃ,x,x,adjective,modal,y,fresh,big,bag
+374,e,l,ɾ,x,x,noun,modal,y,lettuce,of,sat
+375,e,k,tʃ,x,x,noun,modal,y,ketchup,the,na
+376,e,r,ʃ,x,x,adjective,modal,y,fresh,big,bag
+377,e,l,ɾ,x,x,noun,modal,y,lettuce,of,sat
+378,e,k,tʃ,x,x,noun,modal,y,ketchup,the,na
+379,e,r,ʃ,x,x,adjective,modal,y,fresh,big,bag
+380,e,l,ɾ,x,x,noun,modal,y,lettuce,of,sat
+381,e,k,tʃ,x,x,noun,modal,y,ketchup,the,na
+382,e,r,ʃ,x,x,adjective,modal,y,fresh,big,bag
+383,e,l,ɾ,x,x,noun,modal,y,lettuce,of,sat
+384,e,k,tʃ,x,x,noun,modal,y,ketchup,the,na
+385,ei,b,k,x,x,verb,modal,y,bake,to,cakes
+386,ei,c,s,x,x,noun,modal,y,cakes,bake,for
+387,ei,d,na,x,sentence,noun,creaky,n,birthday,for,na
+388,ei,b,k,x,x,verb,modal,y,bake,to,cakes
+389,ei,c,s,x,x,noun,modal,y,cakes,bake,for
+390,ei,d,na,x,sentence,noun,creaky,n,birthday,for,na
+391,ei,b,k,x,x,verb,modal,y,bake,to,cakes
+392,ei,c,s,x,x,noun,modal,y,cakes,bake,for
+393,ei,d,na,x,sentence,noun,creaky,n,birthday,for,na
+394,ei,b,k,x,x,verb,modal,y,bake,to,cakes
+395,ei,c,s,x,x,noun,modal,y,cakes,bake,for
+396,ei,d,na,x,sentence,noun,creaky,n,birthday,for,na
+397,ei,b,k,x,x,verb,modal,y,bake,to,cakes
+398,ei,c,s,x,x,noun,modal,y,cakes,bake,for
+399,ei,d,na,x,sentence,noun,creaky,n,birthday,for,na
+400,ei,b,k,x,x,verb,modal,y,bake,to,cakes
+401,ei,c,s,x,x,noun,modal,y,cakes,bake,for
+402,ei,d,na,x,sentence,noun,creaky,n,birthday,for,na
+403,ei,b,k,x,x,verb,modal,y,bake,to,cakes
+404,ei,c,s,x,x,noun,modal,y,cakes,bake,for
+405,ei,d,na,x,sentence,noun,creaky,n,birthday,for,na
+406,ei,b,k,x,x,verb,modal,y,bake,to,cakes
+407,ei,c,s,x,x,noun,modal,y,cakes,bake,for
+408,ei,d,na,x,sentence,noun,creaky,n,birthday,for,na
+409,ei,b,k,x,x,verb,modal,y,bake,to,cakes
+410,ei,c,s,x,x,noun,modal,y,cakes,bake,for
+411,ei,d,na,x,sentence,noun,creaky,n,birthday,for,na
+412,ei,b,k,x,x,verb,modal,y,bake,to,cakes
+413,ei,c,s,x,x,noun,modal,y,cakes,bake,for
+414,ei,d,na,x,sentence,noun,creaky,n,birthday,for,na
+415,ei,b,k,x,x,verb,modal,y,bake,to,cakes
+416,ei,c,s,x,x,noun,modal,y,cakes,bake,for
+417,ei,d,na,x,sentence,noun,creaky,n,birthday,for,na
+418,ei,b,k,x,x,verb,modal,y,bake,to,cakes
+419,ei,c,s,x,x,noun,modal,y,cakes,bake,for
+420,ei,d,na,x,sentence,noun,creaky,n,birthday,for,na
+421,ei,b,k,x,x,verb,modal,y,bake,to,cakes
+422,ei,c,s,x,x,noun,modal,y,cakes,bake,for
+423,ei,d,na,x,sentence,noun,creaky,n,birthday,for,na
+424,ei,b,k,x,x,verb,modal,y,bake,to,cakes
+425,ei,c,s,x,x,noun,modal,y,cakes,bake,for
+426,ei,d,na,x,sentence,noun,creaky,n,birthday,for,na
+427,ei,b,k,x,x,verb,modal,y,bake,to,cakes
+428,ei,c,s,x,x,noun,modal,y,cakes,bake,for
+429,ei,d,na,x,sentence,noun,creaky,n,birthday,for,na
+430,ei,b,k,x,x,verb,modal,y,bake,to,cakes
+431,ei,c,s,x,x,noun,modal,y,cakes,bake,for
+432,ei,d,na,x,sentence,noun,creaky,n,birthday,for,na
+433,ei,b,k,x,x,verb,modal,y,bake,to,cakes
+434,ei,c,s,x,x,noun,modal,y,cakes,bake,for
+435,ei,d,na,x,sentence,noun,creaky,n,birthday,for,na
+436,ei,b,k,x,x,verb,modal,y,bake,to,cakes
+437,ei,c,s,x,x,noun,modal,y,cakes,bake,for
+438,ei,d,na,x,sentence,noun,creaky,n,birthday,for,na
+439,ei,b,k,x,x,verb,modal,y,bake,to,cakes
+440,ei,c,s,x,x,noun,modal,y,cakes,bake,for
+441,ei,d,na,x,sentence,noun,creaky,n,birthday,for,na
+442,ei,b,k,x,x,verb,modal,y,bake,to,cakes
+443,ei,c,s,x,x,noun,modal,y,cakes,bake,for
+444,ei,d,na,x,sentence,noun,creaky,n,birthday,for,na
+445,ei,b,k,x,x,verb,modal,y,bake,to,cakes
+446,ei,c,s,x,x,noun,modal,y,cakes,bake,for
+447,ei,d,na,x,sentence,noun,creaky,n,birthday,for,na
+448,ei,b,k,x,x,verb,modal,y,bake,to,cakes
+449,ei,c,s,x,x,noun,modal,y,cakes,bake,for
+450,ei,d,na,x,sentence,noun,creaky,n,birthday,for,na
+451,ei,b,k,x,x,verb,modal,y,bake,to,cakes
+452,ei,c,s,x,x,noun,modal,y,cakes,bake,for
+453,ei,d,na,x,sentence,noun,creaky,n,birthday,for,na
+454,ei,b,k,x,x,verb,modal,y,bake,to,cakes
+455,ei,c,s,x,x,noun,modal,y,cakes,bake,for
+456,ei,d,na,x,sentence,noun,creaky,n,birthday,for,na
+457,ei,b,k,x,x,verb,modal,y,bake,to,cakes
+458,ei,c,s,x,x,noun,modal,y,cakes,bake,for
+459,ei,d,na,x,sentence,noun,creaky,n,birthday,for,na
+460,ei,b,k,x,x,verb,modal,y,bake,to,cakes
+461,ei,c,s,x,x,noun,modal,y,cakes,bake,for
+462,ei,d,na,x,sentence,noun,creaky,n,birthday,for,na
+463,ei,b,k,x,x,verb,modal,y,bake,to,cakes
+464,ei,c,s,x,x,noun,modal,y,cakes,bake,for
+465,ei,d,na,x,sentence,noun,creaky,n,birthday,for,na
+466,ei,b,k,x,x,verb,modal,y,bake,to,cakes
+467,ei,c,s,x,x,noun,modal,y,cakes,bake,for
+468,ei,d,na,x,sentence,noun,creaky,n,birthday,for,na
+469,ei,b,k,x,x,verb,modal,y,bake,to,cakes
+470,ei,c,s,x,x,noun,modal,y,cakes,bake,for
+471,ei,d,na,x,sentence,noun,creaky,n,birthday,for,na
+472,ei,b,k,x,x,verb,modal,y,bake,to,cakes
+473,ei,c,s,x,x,noun,modal,y,cakes,bake,for
+474,ei,d,na,x,sentence,noun,creaky,n,birthday,for,na
+475,ei,b,k,x,x,verb,modal,y,bake,to,cakes
+476,ei,c,s,x,x,noun,modal,y,cakes,bake,for
+477,ei,d,na,x,sentence,noun,creaky,n,birthday,for,na
+478,ei,b,k,x,x,verb,modal,y,bake,to,cakes
+479,ei,c,s,x,x,noun,modal,y,cakes,bake,for
+480,ei,d,na,x,sentence,noun,creaky,n,birthday,for,na
+481,i,l,z,x,x,function,modal ,y,please,na,see
+482,i,s,ɛ,x,word,verb,modal ,y,see,please,any
+483,i,l,f,x,x,noun,modal ,y,leaf,any,na
+484,i,l,z,x,x,function,modal ,y,please,na,see
+485,i,s,ɛ,x,word,verb,modal ,y,see,please,any
+486,i,l,f,x,x,noun,modal ,y,leaf,any,na
+487,i,l,z,x,x,function,modal ,y,please,na,see
+488,i,s,ɛ,x,word,verb,modal ,y,see,please,any
+489,i,l,f,x,x,noun,modal ,y,leaf,any,na
+490,i,l,z,x,x,function,modal ,y,please,na,see
+491,i,s,ɛ,x,word,verb,modal ,y,see,please,any
+492,i,l,f,x,x,noun,modal ,y,leaf,any,na
+493,i,l,z,x,x,function,modal ,y,please,na,see
+494,i,s,ɛ,x,word,verb,modal ,y,see,please,any
+495,i,l,f,x,x,noun,modal ,y,leaf,any,na
+496,i,l,z,x,x,function,modal ,y,please,na,see
+497,i,s,ɛ,x,word,verb,modal ,y,see,please,any
+498,i,l,f,x,x,noun,modal ,y,leaf,any,na
+499,i,l,z,x,x,function,modal ,y,please,na,see
+500,i,s,ɛ,x,word,verb,modal ,y,see,please,any
+501,i,l,f,x,x,noun,modal ,y,leaf,any,na
+502,i,l,z,x,x,function,modal ,y,please,na,see
+503,i,s,ɛ,x,word,verb,modal ,y,see,please,any
+504,i,l,f,x,x,noun,modal ,y,leaf,any,na
+505,i,l,z,x,x,function,modal ,y,please,na,see
+506,i,s,ɛ,x,word,verb,modal ,y,see,please,any
+507,i,l,f,x,x,noun,modal ,y,leaf,any,na
+508,i,l,z,x,x,function,modal ,y,please,na,see
+509,i,s,ɛ,x,word,verb,modal ,y,see,please,any
+510,i,l,f,x,x,noun,modal ,y,leaf,any,na
+511,i,l,z,x,x,function,modal ,y,please,na,see
+512,i,s,ɛ,x,word,verb,modal ,y,see,please,any
+513,i,l,f,x,x,noun,modal ,y,leaf,any,na
+514,i,l,z,x,x,function,modal ,y,please,na,see
+515,i,s,ɛ,x,word,verb,modal ,y,see,please,any
+516,i,l,f,x,x,noun,modal ,y,leaf,any,na
+517,i,l,z,x,x,function,modal ,y,please,na,see
+518,i,s,ɛ,x,word,verb,modal ,y,see,please,any
+519,i,l,f,x,x,noun,modal ,y,leaf,any,na
+520,i,l,z,x,x,function,modal ,y,please,na,see
+521,i,s,ɛ,x,word,verb,modal ,y,see,please,any
+522,i,l,f,x,x,noun,modal ,y,leaf,any,na
+523,i,l,z,x,x,function,modal ,y,please,na,see
+524,i,s,ɛ,x,word,verb,modal ,y,see,please,any
+525,i,l,f,x,x,noun,modal ,y,leaf,any,na
+526,i,l,z,x,x,function,modal ,y,please,na,see
+527,i,s,ɛ,x,word,verb,modal ,y,see,please,any
+528,i,l,f,x,x,noun,modal ,y,leaf,any,na
+529,i,l,z,x,x,function,modal ,y,please,na,see
+530,i,s,ɛ,x,word,verb,modal ,y,see,please,any
+531,i,l,f,x,x,noun,modal ,y,leaf,any,na
+532,i,l,z,x,x,function,modal ,y,please,na,see
+533,i,s,ɛ,x,word,verb,modal ,y,see,please,any
+534,i,l,f,x,x,noun,modal ,y,leaf,any,na
+535,i,l,z,x,x,function,modal ,y,please,na,see
+536,i,s,ɛ,x,word,verb,modal ,y,see,please,any
+537,i,l,f,x,x,noun,modal ,y,leaf,any,na
+538,i,l,z,x,x,function,modal ,y,please,na,see
+539,i,s,ɛ,x,word,verb,modal ,y,see,please,any
+540,i,l,f,x,x,noun,modal ,y,leaf,any,na
+541,i,l,z,x,x,function,modal ,y,please,na,see
+542,i,s,ɛ,x,word,verb,modal ,y,see,please,any
+543,i,l,f,x,x,noun,modal ,y,leaf,any,na
+544,i,l,z,x,x,function,modal ,y,please,na,see
+545,i,s,ɛ,x,word,verb,modal ,y,see,please,any
+546,i,l,f,x,x,noun,modal ,y,leaf,any,na
+547,i,l,z,x,x,function,modal ,y,please,na,see
+548,i,s,ɛ,x,word,verb,modal ,y,see,please,any
+549,i,l,f,x,x,noun,modal ,y,leaf,any,na
+550,i,l,z,x,x,function,modal ,y,please,na,see
+551,i,s,ɛ,x,word,verb,modal ,y,see,please,any
+552,i,l,f,x,x,noun,modal ,y,leaf,any,na
+553,i,l,z,x,x,function,modal ,y,please,na,see
+554,i,s,ɛ,x,word,verb,modal ,y,see,please,any
+555,i,l,f,x,x,noun,modal ,y,leaf,any,na
+556,i,l,z,x,x,function,modal ,y,please,na,see
+557,i,s,ɛ,x,word,verb,modal ,y,see,please,any
+558,i,l,f,x,x,noun,modal ,y,leaf,any,na
+559,i,l,z,x,x,function,modal ,y,please,na,see
+560,i,s,ɛ,x,word,verb,modal ,y,see,please,any
+561,i,l,f,x,x,noun,modal ,y,leaf,any,na
+562,i,l,z,x,x,function,modal ,y,please,na,see
+563,i,s,ɛ,x,word,verb,modal ,y,see,please,any
+564,i,l,f,x,x,noun,modal ,y,leaf,any,na
+565,i,l,z,x,x,function,modal ,y,please,na,see
+566,i,s,ɛ,x,word,verb,modal ,y,see,please,any
+567,i,l,f,x,x,noun,modal ,y,leaf,any,na
+568,i,l,z,x,x,function,modal ,y,please,na,see
+569,i,s,ɛ,x,word,verb,modal ,y,see,please,any
+570,i,l,f,x,x,noun,modal ,y,leaf,any,na
+571,i,l,z,x,x,function,modal ,y,please,na,see
+572,i,s,ɛ,x,word,verb,modal ,y,see,please,any
+573,i,l,f,x,x,noun,modal ,y,leaf,any,na
+574,i,l,z,x,x,function,modal ,y,please,na,see
+575,i,s,ɛ,x,word,verb,modal ,y,see,please,any
+576,i,l,f,x,x,noun,modal ,y,leaf,any,na
+577,ih,b,g,x,x,adjective,modal,y,big,a,fresh
+578,ih,t,n,word,x,function,creaky,y,in,sat,the
+579,ih,m,d,x,x,noun,modal,y,middle,the,of
+580,ih,b,g,x,x,adjective,modal,y,big,a,fresh
+581,ih,t,n,word,x,function,creaky,y,in,sat,the
+582,ih,m,d,x,x,noun,modal,y,middle,the,of
+583,ih,b,g,x,x,adjective,modal,y,big,a,fresh
+584,ih,t,n,word,x,function,creaky,y,in,sat,the
+585,ih,m,d,x,x,noun,modal,y,middle,the,of
+586,ih,b,g,x,x,adjective,modal,y,big,a,fresh
+587,ih,t,n,word,x,function,creaky,y,in,sat,the
+588,ih,m,d,x,x,noun,modal,y,middle,the,of
+589,ih,b,g,x,x,adjective,modal,y,big,a,fresh
+590,ih,t,n,word,x,function,creaky,y,in,sat,the
+591,ih,m,d,x,x,noun,modal,y,middle,the,of
+592,ih,b,g,x,x,adjective,modal,y,big,a,fresh
+593,ih,t,n,word,x,function,creaky,y,in,sat,the
+594,ih,m,d,x,x,noun,modal,y,middle,the,of
+595,ih,b,g,x,x,adjective,modal,y,big,a,fresh
+596,ih,t,n,word,x,function,creaky,y,in,sat,the
+597,ih,m,d,x,x,noun,modal,y,middle,the,of
+598,ih,b,g,x,x,adjective,modal,y,big,a,fresh
+599,ih,t,n,word,x,function,creaky,y,in,sat,the
+600,ih,m,d,x,x,noun,modal,y,middle,the,of
+601,ih,b,g,x,x,adjective,modal,y,big,a,fresh
+602,ih,t,n,word,x,function,creaky,y,in,sat,the
+603,ih,m,d,x,x,noun,modal,y,middle,the,of
+604,ih,b,g,x,x,adjective,modal,y,big,a,fresh
+605,ih,t,n,word,x,function,creaky,y,in,sat,the
+606,ih,m,d,x,x,noun,modal,y,middle,the,of
+607,ih,b,g,x,x,adjective,modal,y,big,a,fresh
+608,ih,t,n,word,x,function,creaky,y,in,sat,the
+609,ih,m,d,x,x,noun,modal,y,middle,the,of
+610,ih,b,g,x,x,adjective,modal,y,big,a,fresh
+611,ih,t,n,word,x,function,creaky,y,in,sat,the
+612,ih,m,d,x,x,noun,modal,y,middle,the,of
+613,ih,b,g,x,x,adjective,modal,y,big,a,fresh
+614,ih,t,n,word,x,function,creaky,y,in,sat,the
+615,ih,m,d,x,x,noun,modal,y,middle,the,of
+616,ih,b,g,x,x,adjective,modal,y,big,a,fresh
+617,ih,t,n,word,x,function,creaky,y,in,sat,the
+618,ih,m,d,x,x,noun,modal,y,middle,the,of
+619,ih,b,g,x,x,adjective,modal,y,big,a,fresh
+620,ih,t,n,word,x,function,creaky,y,in,sat,the
+621,ih,m,d,x,x,noun,modal,y,middle,the,of
+622,ih,b,g,x,x,adjective,modal,y,big,a,fresh
+623,ih,t,n,word,x,function,creaky,y,in,sat,the
+624,ih,m,d,x,x,noun,modal,y,middle,the,of
+625,ih,b,g,x,x,adjective,modal,y,big,a,fresh
+626,ih,t,n,word,x,function,creaky,y,in,sat,the
+627,ih,m,d,x,x,noun,modal,y,middle,the,of
+628,ih,b,g,x,x,adjective,modal,y,big,a,fresh
+629,ih,t,n,word,x,function,creaky,y,in,sat,the
+630,ih,m,d,x,x,noun,modal,y,middle,the,of
+631,ih,b,g,x,x,adjective,modal,y,big,a,fresh
+632,ih,t,n,word,x,function,creaky,y,in,sat,the
+633,ih,m,d,x,x,noun,modal,y,middle,the,of
+634,ih,b,g,x,x,adjective,modal,y,big,a,fresh
+635,ih,t,n,word,x,function,creaky,y,in,sat,the
+636,ih,m,d,x,x,noun,modal,y,middle,the,of
+637,ih,b,g,x,x,adjective,modal,y,big,a,fresh
+638,ih,t,n,word,x,function,creaky,y,in,sat,the
+639,ih,m,d,x,x,noun,modal,y,middle,the,of
+640,ih,b,g,x,x,adjective,modal,y,big,a,fresh
+641,ih,t,n,word,x,function,creaky,y,in,sat,the
+642,ih,m,d,x,x,noun,modal,y,middle,the,of
+643,ih,b,g,x,x,adjective,modal,y,big,a,fresh
+644,ih,t,n,word,x,function,creaky,y,in,sat,the
+645,ih,m,d,x,x,noun,modal,y,middle,the,of
+646,ih,b,g,x,x,adjective,modal,y,big,a,fresh
+647,ih,t,n,word,x,function,creaky,y,in,sat,the
+648,ih,m,d,x,x,noun,modal,y,middle,the,of
+649,ih,b,g,x,x,adjective,modal,y,big,a,fresh
+650,ih,t,n,word,x,function,creaky,y,in,sat,the
+651,ih,m,d,x,x,noun,modal,y,middle,the,of
+652,ih,b,g,x,x,adjective,modal,y,big,a,fresh
+653,ih,t,n,word,x,function,creaky,y,in,sat,the
+654,ih,m,d,x,x,noun,modal,y,middle,the,of
+655,ih,b,g,x,x,adjective,modal,y,big,a,fresh
+656,ih,t,n,word,x,function,creaky,y,in,sat,the
+657,ih,m,d,x,x,noun,modal,y,middle,the,of
+658,ih,b,g,x,x,adjective,modal,y,big,a,fresh
+659,ih,t,n,word,x,function,creaky,y,in,sat,the
+660,ih,m,d,x,x,noun,modal,y,middle,the,of
+661,ih,b,g,x,x,adjective,modal,y,big,a,fresh
+662,ih,t,n,word,x,function,creaky,y,in,sat,the
+663,ih,m,d,x,x,noun,modal,y,middle,the,of
+664,ih,b,g,x,x,adjective,modal,y,big,a,fresh
+665,ih,t,n,word,x,function,creaky,y,in,sat,the
+666,ih,m,d,x,x,noun,modal,y,middle,the,of
+667,ih,b,g,x,x,adjective,modal,y,big,a,fresh
+668,ih,t,n,word,x,function,creaky,y,in,sat,the
+669,ih,m,d,x,x,noun,modal,y,middle,the,of
+670,ih,b,g,x,x,adjective,modal,y,big,a,fresh
+671,ih,t,n,word,x,function,creaky,y,in,sat,the
+672,ih,m,d,x,x,noun,modal,y,middle,the,of
