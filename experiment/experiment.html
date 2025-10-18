@@ -29,85 +29,40 @@ h1 { font-size: 24px; margin-top: 0; }
 }
 .btn-primary { background: #007acc; color: white; }
 .btn-primary:disabled {
-  background: #a0aec0;
-  color: #e2e8f0;
-  cursor: not-allowed;
+  background: #a0aec0; color: #e2e8f0; cursor: not-allowed;
 }
 .btn-secondary { background: #ccc; color: black; }
 .hidden { display: none; }
 .progress {
-  height: 8px;
-  background: #eee;
-  border-radius: 4px;
-  margin: 10px 0;
-  overflow: hidden;
+  height: 8px; background: #eee; border-radius: 4px; margin: 10px 0; overflow: hidden;
 }
 .progress > div {
-  height: 100%;
-  background: #007acc;
-  width: 0;
-  transition: width .2s ease;
+  height: 100%; background: #007acc; width: 0; transition: width .2s ease;
 }
 textarea {
-  width: 100%;
-  height: 100px;
-  margin-top: 8px;
-  padding: 6px;
-  border-radius: 4px;
-  border: 1px solid #ccc;
-  font-family: sans-serif;
+  width: 100%; height: 100px; margin-top: 8px; padding: 6px;
+  border-radius: 4px; border: 1px solid #ccc; font-family: sans-serif;
 }
 .question-block {
-  margin: 20px 0;
-  padding: 12px;
-  background: #f9f9f9;
-  border-radius: 6px;
-  border: 1px solid #ddd;
+  margin: 20px 0; padding: 12px; background: #f9f9f9; border-radius: 6px; border: 1px solid #ddd;
 }
-.question-block p {
-  margin: 0 0 8px 0;
-  font-weight: bold;
-}
-.question-block label {
-  display: block;
-  margin: 4px 0;
-}
+.question-block p { margin: 0 0 8px 0; font-weight: bold; }
+.question-block label { display: block; margin: 4px 0; }
 input[type="range"] {
-  -webkit-appearance: none;
-  width: 100%;
-  height: 8px;
-  border-radius: 5px;
-  background: #ddd;
-  outline: none;
-  cursor: pointer;
+  -webkit-appearance: none; width: 100%; height: 8px; border-radius: 5px; background: #ddd; outline: none; cursor: pointer;
 }
 input[type="range"]::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  width: 18px; height: 18px;
-  border-radius: 50%;
-  background: #aaa;
-  cursor: pointer;
-  margin-top: -5px;
-  transition: background 0.2s;
+  -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%; background: #aaa; cursor: pointer; margin-top: -5px; transition: background 0.2s;
 }
 input[type="range"].active::-webkit-slider-thumb { background: #007bff; }
 input[type="range"]::-moz-range-thumb {
-  width: 18px; height: 18px; border-radius: 50%; background: #aaa;
-  transition: background 0.2s; cursor: pointer;
+  width: 18px; height: 18px; border-radius: 50%; background: #aaa; transition: background 0.2s; cursor: pointer;
 }
 input[type="range"].active::-moz-range-thumb { background: #007bff; }
 .scale-labels {
-  display: flex;
-  justify-content: space-between;
-  font-size: 12px;
-  color: #555;
-  margin-top: 6px;
+  display: flex; justify-content: space-between; font-size: 12px; color: #555; margin-top: 6px;
 }
-.scale-labels span {
-  flex: 1;
-  text-align: center;
-  white-space: nowrap;
-}
+.scale-labels span { flex: 1; text-align: center; white-space: nowrap; }
 </style>
 </head>
 <body>
@@ -169,43 +124,17 @@ input[type="range"].active::-moz-range-thumb { background: #007bff; }
 </div>
 
 <script>
-/* ===========================
-   Helpers / Visuals
-=========================== */
-function setSliderBackground(slider){
-  if(!slider.classList.contains('active')){slider.style.background='#ddd';return;}
-  const min=Number(slider.min),max=Number(slider.max),val=Number(slider.value);
-  const percent=((val-min)/(max-min))*100;
-  slider.style.background=`linear-gradient(to right,#007bff 0%,#007bff ${percent}%,#ddd ${percent}%,#ddd 100%)`;
-}
-function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+// ===========================
+// Config / Mapping
+// ===========================
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxXRmnC8XnDryTN2S2UBXkqG93Y0YoV2-V56ZVxAe92GIIzHI112C4BnfSGDAPrItssiQ/exec";
 
-/* ===========================
-   Config
-=========================== */
 const CONFIG = {
   assetsBase: '../data/soundfiles',
   attnBase: './audio_check',
   stimuliPersonality: ['passage'],
   stimuliRace: ['central','fronting','mono','raising'],
   suffix: '.mp3',
-  questions:{
-    Personality:[
-      "How friendly does this speaker sound?",
-      "How professional does this speaker sound?",
-      "How funny does this speaker sound?",
-      "How competent does this speaker sound?",
-      "How trustworthy does this speaker sound?",
-      "How pleasant does this speaker sound?",
-      "How human-like was this voice?"
-    ],
-    Race:[
-      {type:"radio-list",text:"What dialect region does the AI voice sound like?",options:["Midwestern U.S.","Northeastern U.S.","Northwestern U.S.","Southeastern U.S.","Southwestern U.S.","Non-American"]},
-      {type:"radio-list",text:"What race does the AI voice sound like?",options:["Asian","Black","Latino/Hispanic","White"]},
-      {type:"radio-list",text:"How old does the AI voice sound?",options:["18–24","25–34","35–44","45–54","55+"]},
-      {type:"likert",text:"How feminine or masculine does the AI voice sound?",scaleMin:1,scaleMax:7}
-    ]
-  },
   bins:['BF','BM','WF','WM'],
   numsPerBin:8
 };
@@ -224,13 +153,9 @@ const Q2KEY = {
   "How feminine or masculine does the AI voice sound?":"gender_scale"
 };
 
-function filenameForTrial(t){
-  return `${t.speaker}_${t.stimulus}${CONFIG.suffix}`;
-}
-
-/* ===========================
-   Global State
-=========================== */
+// ===========================
+// State
+// ===========================
 const State={
   blocks:{},
   order:[],
@@ -240,13 +165,29 @@ const State={
   attnQueue:[],
   attnAnswers:[],
   participantId:null,
-  answers:{},
   demographics:{}
 };
 
-/* ===========================
-   Consent
-=========================== */
+// ===========================
+// Helpers
+// ===========================
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function setSliderBackground(slider){
+  if(!slider.classList.contains('active')){slider.style.background='#ddd';return;}
+  const min=Number(slider.min),max=Number(slider.max),val=Number(slider.value);
+  const percent=((val-min)/(max-min))*100;
+  slider.style.background=`linear-gradient(to right,#007bff 0%,#007bff ${percent}%,#ddd ${percent}%,#ddd 100%)`;
+}
+function filenameForTrial(t){ return `${t.speaker}_${t.stimulus}${CONFIG.suffix}`; }
+function sendToGoogleSheet(obj){
+  const fd = new FormData();
+  for (const k in obj) fd.append(k, obj[k] ?? "");
+  fetch(SCRIPT_URL, { method:"POST", body:fd }).catch(err=>console.error("Sheet POST error:", err));
+}
+
+// ===========================
+// Consent
+// ===========================
 document.getElementById('consentCheck').onchange=e=>{
   document.getElementById('consentBtn').disabled=!e.target.checked;
 };
@@ -257,9 +198,9 @@ document.getElementById('consentBtn').onclick=()=>{
   showAudioAttentionCheck(()=>{ startExperiment(); });
 };
 
-/* ===========================
-   Attention Checks
-=========================== */
+// ===========================
+// Attention Checks (bundled into final row)
+// ===========================
 function prepareAttentionQueue(){
   const urls=[];
   for(let i=1;i<=22;i++){ urls.push(`${CONFIG.attnBase}/${i}.mp3`); }
@@ -286,21 +227,21 @@ function showAudioAttentionCheck(onContinue){
   audio.onended=()=>{ playBtn.disabled=false; playBtn.textContent='Replay Audio'; };
   input.oninput=()=>{ nextBtn.disabled=!input.value.trim(); };
   nextBtn.onclick=()=>{
-    State.attnAnswers.push(input.value.trim());
+    const ans=input.value.trim();
+    if(!ans){ alert("Please type your answer before continuing."); return; }
+    State.attnAnswers.push(ans); // stored to be sent in final row
     card.classList.add('hidden');
     onContinue && onContinue();
   };
   card.classList.remove('hidden');
 }
 
-/* ===========================
-   Experiment Flow
-=========================== */
+// ===========================
+// Experiment Flow
+// ===========================
 function buildAllSpeakers(){
   const s=[];
-  for(const b of CONFIG.bins){
-    for(let n=1;n<=CONFIG.numsPerBin;n++){ s.push(`${b}${n}`); }
-  }
+  for(const b of CONFIG.bins){ for(let n=1;n<=CONFIG.numsPerBin;n++){ s.push(`${b}${n}`); } }
   return s;
 }
 function sampleSpeakersPerBlock(all){
@@ -337,9 +278,9 @@ function startExperiment(){
   renderBlock('Personality');
 }
 
-/* ===========================
-   Block / Trial Logic
-=========================== */
+// ===========================
+// Trial UI
+// ===========================
 const block=document.getElementById('screen-block');
 const progressBar=document.getElementById('progressBar');
 const player=document.getElementById('player');
@@ -350,7 +291,16 @@ const questionsContainer=document.getElementById('questionsContainer');
 function renderQuestions(blockName){
   questionsContainer.innerHTML='';
   if(blockName==="Personality"){
-    shuffle(CONFIG.questions.Personality).forEach(q=>{
+    const qs = [
+      "How friendly does this speaker sound?",
+      "How professional does this speaker sound?",
+      "How funny does this speaker sound?",
+      "How competent does this speaker sound?",
+      "How trustworthy does this speaker sound?",
+      "How pleasant does this speaker sound?",
+      "How human-like was this voice?"
+    ];
+    shuffle(qs).forEach(q=>{
       const div=document.createElement('div');
       div.className='question-block';
       div.innerHTML=`<p>${q}</p>
@@ -359,13 +309,19 @@ function renderQuestions(blockName){
       questionsContainer.appendChild(div);
     });
   } else {
-    shuffle(CONFIG.questions.Race).forEach((q,i)=>{
+    const qs = [
+      {type:"radio-list",text:"What dialect region does the AI voice sound like?",options:["Midwestern U.S.","Northeastern U.S.","Northwestern U.S.","Southeastern U.S.","Southwestern U.S.","Non-American"]},
+      {type:"radio-list",text:"What race does the AI voice sound like?",options:["Asian","Black","Latino/Hispanic","White"]},
+      {type:"radio-list",text:"How old does the AI voice sound?",options:["18–24","25–34","35–44","45–54","55+"]},
+      {type:"likert",text:"How feminine or masculine does the AI voice sound?"}
+    ];
+    shuffle(qs).forEach((q,i)=>{
       const div=document.createElement('div');
       div.className='question-block';
       let html=`<p>${q.text}</p>`;
       if(q.type==="radio-list"){
         q.options.forEach(opt=>html+=`<label><input type="radio" name="r${i}" value="${opt}" disabled> ${opt}</label>`);
-      } else if(q.type==="likert"){
+      } else {
         html+=`<input type="range" min="1" max="7" step="any" value="4" class="slider" data-touched="false" disabled>
         <div class="scale-labels"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span></div>`;
       }
@@ -379,24 +335,40 @@ function renderQuestions(blockName){
   });
   document.querySelectorAll('input[type=radio]').forEach(inp=>inp.onchange=updateNextButtonState);
 }
+
 function disableInputs(disabled){document.querySelectorAll('#questionsContainer input').forEach(inp=>inp.disabled=disabled);}
+
 function allAnswered(){
-  if(State.currentBlock==="Personality") return Array.from(document.querySelectorAll('.slider')).every(sl=>sl.dataset.touched==="true");
+  if(State.currentBlock==="Personality"){
+    return Array.from(document.querySelectorAll('.slider')).every(sl=>sl.dataset.touched==="true");
+  }
   if(State.currentBlock==="Race"){
-    const sliders=Array.from(document.querySelectorAll('.slider'));
-    const radios=Array.from(document.querySelectorAll('input[type=radio]'));
-    const sliderOK=sliders.length===0||sliders.every(sl=>sl.dataset.touched==="true");
-    const radioOK=radios.length===0||Array.from(document.querySelectorAll('.question-block')).every(b=>b.querySelector('input:checked'));
-    return sliderOK&&radioOK;
+    // Each question-block must be satisfied:
+    // - radio-list: at least one radio checked
+    // - likert slider: slider must be touched
+    return Array.from(document.querySelectorAll('.question-block')).every(b=>{
+      const radios = b.querySelectorAll('input[type="radio"]');
+      const slider = b.querySelector('input[type="range"]');
+      if(radios.length>0){
+        return Array.from(radios).some(r=>r.checked);
+      }
+      if(slider){
+        return slider.dataset.touched==="true";
+      }
+      return true;
+    });
   }
   return false;
 }
+
 function updateNextButtonState(){ nextBtn.disabled=!(State.audioFinished&&allAnswered()); }
+
 function resetAnswers(){
   document.querySelectorAll('.slider').forEach(sl=>{sl.value=4;sl.dataset.touched="false";sl.disabled=true;setSliderBackground(sl);});
   document.querySelectorAll('input[type=radio]').forEach(r=>{r.checked=false;r.disabled=true;});
   nextBtn.disabled=true;
 }
+
 function currentTrials(){ return State.blocks[State.currentBlock]; }
 function currentTrial(){ return currentTrials()[State.trialIndex]; }
 
@@ -422,6 +394,7 @@ function updateTrialUI(){
     updateNextButtonState();
   };
 }
+
 function renderBlock(name){
   State.currentBlock=name;
   State.trialIndex=0;
@@ -431,10 +404,13 @@ function renderBlock(name){
   document.getElementById('skipBtn').onclick=()=>{State.audioFinished=true;handleNext();};
 }
 
-/* ===========================
-   Attention Check Insertions
-=========================== */
+// ===========================
+// Flow / Next
+// ===========================
 function handleNext(){
+  // Save current trial BEFORE advancing
+  recordTrialResponses();
+
   State.trialIndex++;
   const total=currentTrials().length;
   const atEnd=State.trialIndex>=total;
@@ -463,9 +439,9 @@ function handleNext(){
   } else proceedAfterChecks();
 }
 
-/* ===========================
-   Demographics and Feedback
-=========================== */
+// ===========================
+// Demographics + Feedback
+// ===========================
 function renderDemographics(){
   const demo=document.getElementById('screen-demographics');
   demo.classList.remove('hidden');
@@ -503,16 +479,13 @@ function renderDemographics(){
   document.getElementById('demoQuestions').innerHTML=html;
 
   const btn=document.getElementById('demoNextBtn');
+
   function toggleConditional(name,val,box){
     document.querySelectorAll(`input[name="${name}"]`).forEach(inp=>
       inp.addEventListener('change',()=>{
         const b=document.getElementById(box);
-        if(inp.checked && inp.value===val){
-          b.classList.remove('hidden');
-        } else if(inp.checked){
-          b.classList.add('hidden');
-          b.querySelector('textarea').value="";
-        }
+        if(inp.checked && inp.value===val){ b.classList.remove('hidden'); }
+        else if(inp.checked){ b.classList.add('hidden'); b.querySelector('textarea').value=""; }
         updateBtn();
       })
     );
@@ -546,19 +519,105 @@ function renderDemographics(){
   btn.disabled=true;
   btn.onclick=()=>{
     if(allDemoAnswered()){
+      State.demographics = collectDemographics(); // store to send at final submit
       demo.classList.add('hidden');
       document.getElementById('screen-feedback').classList.remove('hidden');
     } else alert("Please complete all required questions before continuing.");
   };
 }
 
-/* ===========================
-   Final Screen
-=========================== */
+// Final submit
 document.getElementById('feedbackNextBtn').onclick=()=>{
+  const feedback = document.getElementById('feedbackText').value || "";
+  submitDemographicsAndFinalize(feedback);
   document.getElementById('screen-feedback').classList.add('hidden');
   document.getElementById('screen-finish').classList.remove('hidden');
 };
+
+// ===========================
+// Recording & Submission
+// ===========================
+function recordTrialResponses(){
+  if(!State.currentBlock) return;
+  const t=currentTrial(); if(!t) return;
+
+  const data = {
+    participant_id: State.participantId,
+    block: State.currentBlock,
+    trial_index: State.trialIndex + 1,
+    speaker: t.speaker,
+    stimulus: t.stimulus,
+    audio_file: filenameForTrial(t)
+  };
+
+  document.querySelectorAll('#questionsContainer .question-block').forEach(b=>{
+    const qText = (b.querySelector('p')?.innerText || "").trim();
+    const key = Q2KEY[qText];
+    if(!key) return;
+    const slider = b.querySelector('input[type="range"]');
+    const checked = b.querySelector('input[type="radio"]:checked');
+    if(slider) data[key] = slider.value;
+    else if(checked) data[key] = checked.value;
+  });
+
+  sendToGoogleSheet(data);
+}
+
+function collectDemographics(){
+  const getRadio = name => (document.querySelector(`input[name="${name}"]:checked`) || {}).value || "";
+  const getChecks = name => Array.from(document.querySelectorAll(`input[name="${name}"]:checked`)).map(i=>i.value).join("; ");
+
+  const first = getRadio("firstlang");
+  const speech = getRadio("speech");
+  const neuro = getRadio("neuro");
+
+  return {
+    participant_id: State.participantId,
+    block: "Demographics",
+    age: getRadio("age"),
+    ethnicity: getChecks("ethnicity"),
+    dialect: getRadio("dialect"),
+    first_language: first,
+    other_languages: first==="English and another language" ? (document.getElementById('otherLangText').value || "") : "",
+    gender: getRadio("gender"),
+    speech_disorder: speech,
+    speech_disorder_desc: speech==="Yes" ? (document.getElementById('speechDescText').value || "") : "",
+    neurodivergent: neuro,
+    neurodivergent_desc: neuro==="Yes" ? (document.getElementById('neuroDescText').value || "") : "",
+    technologies_used: getChecks("tech"),
+    ai_use_frequency: getRadio("aiuse"),
+    ai_attitude: getRadio("aiatt")
+  };
+}
+
+function submitDemographicsAndFinalize(finalFeedbackText){
+  const demo = State.demographics || {};
+  const out = {
+    participant_id: demo.participant_id || State.participantId,
+    block: "Demographics",
+    age: demo.age || "",
+    ethnicity: demo.ethnicity || "",
+    dialect: demo.dialect || "",
+    first_language: demo.first_language || "",
+    other_languages: demo.other_languages || "",
+    gender: demo.gender || "",
+    speech_disorder: demo.speech_disorder || "",
+    speech_disorder_desc: demo.speech_disorder_desc || "",
+    neurodivergent: demo.neurodivergent || "",
+    neurodivergent_desc: demo.neurodivergent_desc || "",
+    technologies_used: demo.technologies_used || "",
+    ai_use_frequency: demo.ai_use_frequency || "",
+    ai_attitude: demo.ai_attitude || "",
+    final_feedback: finalFeedbackText || ""
+  };
+
+  // Bundle all 22 attention checks into this final row
+  for(let i=1;i<=22;i++){
+    out[`attention_check_${i}`] = State.attnAnswers[i-1] || "";
+  }
+
+  sendToGoogleSheet(out);
+}
 </script>
 </body>
 </html>
