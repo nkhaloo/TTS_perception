@@ -1,0 +1,60 @@
+File type = "ooTextFile"
+Object class = "TextGrid"
+
+xmin = 0 
+xmax = 4.557256235827665 
+tiers? <exists> 
+size = 2 
+item []: 
+    item [1]:
+        class = "IntervalTier" 
+        name = "pitch" 
+        xmin = 0 
+        xmax = 4.557256235827665 
+        intervals: size = 3 
+        intervals [1]:
+            xmin = 0 
+            xmax = 0.08246215347792338 
+            text = "" 
+        intervals [2]:
+            xmin = 0.08246215347792338 
+            xmax = 4.035819998841216 
+            text = "WF1" 
+        intervals [3]:
+            xmin = 4.035819998841216 
+            xmax = 4.557256235827665 
+            text = "" 
+    item [2]:
+        class = "IntervalTier" 
+        name = "vowels" 
+        xmin = 0 
+        xmax = 4.557256235827665 
+        intervals: size = 7 
+        intervals [1]:
+            xmin = 0 
+            xmax = 0.8924880211889158 
+            text = "" 
+        intervals [2]:
+            xmin = 0.8924880211889158 
+            xmax = 1.129362887181218 
+            text = "49" 
+        intervals [3]:
+            xmin = 1.129362887181218 
+            xmax = 1.9424095640999337 
+            text = "" 
+        intervals [4]:
+            xmin = 1.9424095640999337 
+            xmax = 2.0790305057515446 
+            text = "50" 
+        intervals [5]:
+            xmin = 2.0790305057515446 
+            xmax = 3.0488890778114057 
+            text = "" 
+        intervals [6]:
+            xmin = 3.0488890778114057 
+            xmax = 3.148226329720891 
+            text = "51" 
+        intervals [7]:
+            xmin = 3.148226329720891 
+            xmax = 4.557256235827665 
+            text = "" 

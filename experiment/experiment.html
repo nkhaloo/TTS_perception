@@ -322,8 +322,16 @@ function renderQuestions(blockName){
       if(q.type==="radio-list"){
         q.options.forEach(opt=>html+=`<label><input type="radio" name="r${i}" value="${opt}" disabled> ${opt}</label>`);
       } else {
-        html+=`<input type="range" min="1" max="7" step="any" value="4" class="slider" data-touched="false" disabled>
-        <div class="scale-labels"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span></div>`;
+        html += `
+            <div style="display:flex; justify-content:space-between; font-size:13px; font-weight:bold; color:#444; margin-bottom:4px;">
+              <span>Most Feminine</span>
+              <span>Most Masculine</span>
+            </div>
+            <input type="range" min="1" max="7" step="any" value="4"
+                   class="slider" data-touched="false" disabled>
+            <div class="scale-labels">
+              <span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span>
+            </div>`;
       }
       div.innerHTML=html;
       questionsContainer.appendChild(div);
