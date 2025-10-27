@@ -119,7 +119,6 @@ input[type="range"].active::-moz-range-thumb { background: #007bff; }
   <div class="progress"><div id="progressBar"></div></div>
   <p>Please press the button to listen to the audio, then answer the questions below:</p>
   <button class="btn btn-primary" id="playBtn">Play Audio</button>
-  <button class="btn btn-secondary" id="skipBtn">Skip (Pilot Only)</button>
   <audio id="player" preload="auto"></audio>
   <div id="questionsContainer"></div>
   <div style="margin-top:12px;">
@@ -439,7 +438,6 @@ function renderBlock(name){
   block.classList.remove('hidden');
   updateTrialUI();
   nextBtn.onclick=handleNext;
-  document.getElementById('skipBtn').onclick=()=>{State.audioFinished=true;handleNext();};
 }
 
 /* ===========================
