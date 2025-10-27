@@ -260,7 +260,7 @@ headphoneNextBtn.onclick=()=>{
 =========================== */
 function prepareAttentionQueue(){
   const urls=[];
-  for(let i=1;i<=22;i++){ urls.push(`${CONFIG.attnBase}/${i}.mp3`); }
+  for(let i=1;i<=21;i++){ urls.push(`${CONFIG.attnBase}/${i}.mp3`); }
   State.attnQueue = shuffle(urls);
 }
 function nextAttentionAudio(){
@@ -668,7 +668,7 @@ function submitDemographicsAndFinalize(finalFeedbackText){
   };
 
   // Bundle all attention checks into this final row
-  for(let i=1;i<=22;i++){
+  for(let i=1;i<=21;i++){
     out[`attention_check_${i}`] = State.attnAnswers[i-1] || "";
   }
 
