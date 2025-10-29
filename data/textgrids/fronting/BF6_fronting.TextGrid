@@ -1,0 +1,60 @@
+File type = "ooTextFile"
+Object class = "TextGrid"
+
+xmin = 0 
+xmax = 1.8405215419501133 
+tiers? <exists> 
+size = 2 
+item []: 
+    item [1]:
+        class = "IntervalTier" 
+        name = "pitch" 
+        xmin = 0 
+        xmax = 1.8405215419501133 
+        intervals: size = 3 
+        intervals [1]:
+            xmin = 0 
+            xmax = 0.14210638997293673 
+            text = "" 
+        intervals [2]:
+            xmin = 0.14210638997293673 
+            xmax = 1.598026183398939 
+            text = "BF6" 
+        intervals [3]:
+            xmin = 1.598026183398939 
+            xmax = 1.8405215419501133 
+            text = "" 
+    item [2]:
+        class = "IntervalTier" 
+        name = "vowel" 
+        xmin = 0 
+        xmax = 1.8405215419501133 
+        intervals: size = 7 
+        intervals [1]:
+            xmin = 0 
+            xmax = 0.14627110750878672 
+            text = "" 
+        intervals [2]:
+            xmin = 0.14627110750878672 
+            xmax = 0.2883758928723356 
+            text = "112_c" 
+        intervals [3]:
+            xmin = 0.2883758928723356 
+            xmax = 0.687451655639711 
+            text = "" 
+        intervals [4]:
+            xmin = 0.687451655639711 
+            xmax = 0.8786338668762381 
+            text = "113" 
+        intervals [5]:
+            xmin = 0.8786338668762381 
+            xmax = 1.2984808828305794 
+            text = "" 
+        intervals [6]:
+            xmin = 1.2984808828305794 
+            xmax = 1.431422074811262 
+            text = "114_c" 
+        intervals [7]:
+            xmin = 1.431422074811262 
+            xmax = 1.8405215419501133 
+            text = "" 
