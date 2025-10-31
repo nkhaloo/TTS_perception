@@ -115,6 +115,27 @@ input[type="range"].active::-moz-range-thumb { background: #007bff; }
   <button class="btn btn-primary" id="headphoneNextBtn" disabled>Continue</button>
 </div>
 
+<!-- Volume Check -->
+<div class="card hidden" id="screen-volume">
+  <h1>Audio Volume Check</h1>
+  <p>
+    This experiment uses spoken audio. Please set your device volume to a <strong>comfortable</strong> level.
+  </p>
+  <p>
+    Press the button below to play a short test sound. You may replay it as many times as you wish until the volume feels right.
+  </p>
+
+  <button class="btn btn-primary" id="playVolumeCheckBtn">Play Test Audio</button>
+  <audio id="volumeCheckAudio" preload="auto"></audio>
+
+  <p style="margin-top:16px; color:#555; font-size:14px;">
+    When you can clearly hear the audio without distortion or discomfort, click <strong>Continue</strong>.
+  </p>
+
+  <button class="btn btn-primary" id="volumeNextBtn" disabled>Continue</button>
+</div>
+
+
 <!-- Audio Attention Check -->
 <div class="card hidden" id="screen-audiocheck">
   <button class="btn btn-primary" id="playAudioCheckBtn">Play Audio</button>
@@ -283,12 +304,49 @@ function updateHeadphoneContinue(){
 headphoneInput.oninput=updateHeadphoneContinue;
 confirmHeadphones.onchange=updateHeadphoneContinue;
 
-headphoneNextBtn.onclick=()=>{
-  State.headphoneType=headphoneInput.value.trim();
+headphoneNextBtn.onclick = () => {
+  State.headphoneType = headphoneInput.value.trim();
   document.getElementById('screen-headphones').classList.add('hidden');
-  prepareAttentionQueue();
-  showAudioAttentionCheck(()=>{ startExperiment(); });
+  document.getElementById('screen-volume').classList.remove('hidden');
 };
+
+// ===========================
+// Volume Check Screen Logic
+// ===========================
+const volumeAudio = document.getElementById('volumeCheckAudio');
+const playVolumeBtn = document.getElementById('playVolumeCheckBtn');
+const volumeNextBtn = document.getElementById('volumeNextBtn');
+
+// Use the hosted GitHub Pages URL (do NOT use your local /Users path)
+volumeAudio.src = "https://nkhaloo.github.io/TTS_perception/experiment/audio_check/audio_check.mp3";
+
+// Allow unlimited replays here only
+playVolumeBtn.onclick = async () => {
+  try {
+    await volumeAudio.play();
+    volumeNextBtn.disabled = false; // enable Continue after first successful play
+    playVolumeBtn.textContent = "Playing...";
+    playVolumeBtn.disabled = true;
+  } catch (err) {
+    alert("Unable to start audio playback. Please check your browser sound permissions and try again.");
+  }
+};
+
+// When test audio ends, re-enable the play button for replay
+volumeAudio.onended = () => {
+  playVolumeBtn.textContent = "Replay Audio";
+  playVolumeBtn.disabled = false;
+};
+
+// Proceed to attention check (and then trials)
+volumeNextBtn.onclick = () => {
+  volumeAudio.pause();
+  document.getElementById('screen-volume').classList.add('hidden');
+  prepareAttentionQueue();
+  showAudioAttentionCheck(() => { startExperiment(); });
+};
+
+
 
 /* ===========================
    Attention Checks
@@ -308,28 +366,51 @@ function showAudioAttentionCheck(onContinue){
   const audio=document.getElementById('audioCheckPlayer');
   const input=document.getElementById('audioCheckResponse');
   const nextBtn=document.getElementById('audioCheckNextBtn');
-  input.value=""; nextBtn.disabled=true;
-  playBtn.disabled=false; playBtn.textContent='Play Audio';
+
+  input.value="";
+  nextBtn.disabled=true;
+
+  // Reset UI
+  playBtn.disabled=false;
+  playBtn.textContent='Play Audio';
+
+  // Load next attention audio from the shuffled queue
   audio.src=nextAttentionAudio();
   audio.currentTime=0;
-  playBtn.onclick=async()=>{
-    try{ playBtn.disabled=true; playBtn.textContent='Playing...'; await audio.play(); }
-    catch{ playBtn.disabled=false; playBtn.textContent='Play Audio';}
+
+  // One-play only: after clicking once, we never re-enable the play button
+  playBtn.onclick = async () => {
+    try {
+      playBtn.disabled = true;
+      playBtn.textContent = 'Playing...';
+      await audio.play();
+    } catch {
+      alert("Please check your browser audio permissions.");
+      playBtn.disabled = false;
+      playBtn.textContent = 'Play Audio';
+    }
   };
-  audio.onended=()=>{
-    playBtn.disabled=true;
-    playBtn.textContent='Audio finished';
+
+  // After it ends, keep play disabled (no replay)
+  audio.onended = () => {
+    playBtn.textContent = 'Audio finished';
+    playBtn.disabled = true;
   };
-  input.oninput=()=>{ nextBtn.disabled=!input.value.trim(); };
-  nextBtn.onclick=()=>{
-    const ans=input.value.trim();
+
+  // Enable Continue only when they type something
+  input.oninput = () => { nextBtn.disabled = !input.value.trim(); };
+
+  nextBtn.onclick = () => {
+    const ans = input.value.trim();
     if(!ans){ alert("Please type your answer before continuing."); return; }
     State.attnAnswers.push(ans);
     card.classList.add('hidden');
     onContinue && onContinue();
   };
+
   card.classList.remove('hidden');
 }
+
 
 /* ===========================
    Experiment Flow
