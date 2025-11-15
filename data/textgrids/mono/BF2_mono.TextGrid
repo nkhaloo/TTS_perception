@@ -1,0 +1,84 @@
+File type = "ooTextFile"
+Object class = "TextGrid"
+
+xmin = 0 
+xmax = 1.7882766439909297 
+tiers? <exists> 
+size = 2 
+item []: 
+    item [1]:
+        class = "IntervalTier" 
+        name = "pitch" 
+        xmin = 0 
+        xmax = 1.7882766439909297 
+        intervals: size = 3 
+        intervals [1]:
+            xmin = 0 
+            xmax = 0.10724589837435325 
+            text = "" 
+        intervals [2]:
+            xmin = 0.10724589837435325 
+            xmax = 1.545904046422816 
+            text = "BF2" 
+        intervals [3]:
+            xmin = 1.545904046422816 
+            xmax = 1.7882766439909297 
+            text = "" 
+    item [2]:
+        class = "IntervalTier" 
+        name = "vowel" 
+        xmin = 0 
+        xmax = 1.7882766439909297 
+        intervals: size = 13 
+        intervals [1]:
+            xmin = 0 
+            xmax = 0.10820070459963846 
+            text = "" 
+        intervals [2]:
+            xmin = 0.10820070459963846 
+            xmax = 0.15962111567439638 
+            text = "196_c" 
+        intervals [3]:
+            xmin = 0.15962111567439638 
+            xmax = 0.19612749461287668 
+            text = "" 
+        intervals [4]:
+            xmin = 0.19612749461287668 
+            xmax = 0.2787464690773367 
+            text = "197_h" 
+        intervals [5]:
+            xmin = 0.2787464690773367 
+            xmax = 0.4424527938261033 
+            text = "" 
+        intervals [6]:
+            xmin = 0.4424527938261033 
+            xmax = 0.5555986312814704 
+            text = "388_h" 
+        intervals [7]:
+            xmin = 0.5555986312814704 
+            xmax = 0.6675752806446668 
+            text = "" 
+        intervals [8]:
+            xmin = 0.6675752806446668 
+            xmax = 0.7733895283414361 
+            text = "389_h" 
+        intervals [9]:
+            xmin = 0.7733895283414361 
+            xmax = 1.0095195804136803 
+            text = "" 
+        intervals [10]:
+            xmin = 1.0095195804136803 
+            xmax = 1.0794503564141684 
+            text = "198" 
+        intervals [11]:
+            xmin = 1.0794503564141684 
+            xmax = 1.3638668273165468 
+            text = "" 
+        intervals [12]:
+            xmin = 1.3638668273165468 
+            xmax = 1.545904046422816 
+            text = "389_h" 
+        intervals [13]:
+            xmin = 1.545904046422816 
+            xmax = 1.7882766439909297 
+            text = "" 

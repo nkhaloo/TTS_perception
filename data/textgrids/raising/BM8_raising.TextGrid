@@ -29,32 +29,56 @@ item []:
         name = "vowel" 
         xmin = 0 
         xmax = 5.445419501133787 
-        intervals: size = 7 
+        intervals: size = 13 
         intervals [1]:
             xmin = 0 
-            xmax = 1.2508066922526353 
+            xmax = 0.8584875886068131 
             text = "" 
         intervals [2]:
+            xmin = 0.8584875886068131 
+            xmax = 1.012147249691298 
+            text = "334_h" 
+        intervals [3]:
+            xmin = 1.012147249691298 
+            xmax = 1.2508066922526353 
+            text = "" 
+        intervals [4]:
             xmin = 1.2508066922526353 
             xmax = 1.4639835709659816 
             text = "43" 
-        intervals [3]:
+        intervals [5]:
             xmin = 1.4639835709659816 
+            xmax = 1.7920907030495175 
+            text = "" 
+        intervals [6]:
+            xmin = 1.7920907030495175 
+            xmax = 1.9449606579610592 
+            text = "335_c" 
+        intervals [7]:
+            xmin = 1.9449606579610592 
             xmax = 2.586342969613484 
             text = "" 
-        intervals [4]:
+        intervals [8]:
             xmin = 2.586342969613484 
             xmax = 2.7739671471146696 
             text = "44" 
-        intervals [5]:
+        intervals [9]:
             xmin = 2.7739671471146696 
             xmax = 3.8704286136345334 
             text = "" 
-        intervals [6]:
+        intervals [10]:
             xmin = 3.8704286136345334 
             xmax = 4.050591226400244 
-            text = "45" 
-        intervals [7]:
+            text = "45_h" 
+        intervals [11]:
             xmin = 4.050591226400244 
+            xmax = 4.697337388950658 
+            text = "" 
+        intervals [12]:
+            xmin = 4.697337388950658 
+            xmax = 4.8479578953459725 
+            text = "336_hc" 
+        intervals [13]:
+            xmin = 4.8479578953459725 
             xmax = 5.445419501133787 
             text = "" 

@@ -29,32 +29,56 @@ item []:
         name = "vowel" 
         xmin = 0 
         xmax = 3.982562358276644 
-        intervals: size = 7 
+        intervals: size = 13 
         intervals [1]:
             xmin = 0 
-            xmax = 0.7845024620423653 
+            xmax = 0.4942956253631819 
             text = "" 
         intervals [2]:
+            xmin = 0.4942956253631819 
+            xmax = 0.6304383195172011 
+            text = "361_h" 
+        intervals [3]:
+            xmin = 0.6304383195172011 
+            xmax = 0.7845024620423653 
+            text = "" 
+        intervals [4]:
             xmin = 0.7845024620423653 
             xmax = 0.9658331093016236 
             text = "73" 
-        intervals [3]:
+        intervals [5]:
             xmin = 0.9658331093016236 
+            xmax = 1.194488839012325 
+            text = "" 
+        intervals [6]:
+            xmin = 1.194488839012325 
+            xmax = 1.3011272378087004 
+            text = "362" 
+        intervals [7]:
+            xmin = 1.3011272378087004 
             xmax = 1.5666149454504141 
             text = "" 
-        intervals [4]:
+        intervals [8]:
             xmin = 1.5666149454504141 
             xmax = 1.724573736011174 
             text = "74" 
-        intervals [5]:
+        intervals [9]:
             xmin = 1.724573736011174 
-            xmax = 2.5764100980852445 
+            xmax = 2.5699256739847955 
             text = "" 
-        intervals [6]:
-            xmin = 2.5764100980852445 
+        intervals [10]:
+            xmin = 2.5699256739847955 
             xmax = 2.7522836163649718 
-            text = "75" 
-        intervals [7]:
+            text = "75_h" 
+        intervals [11]:
             xmin = 2.7522836163649718 
+            xmax = 3.316788996600993 
+            text = "" 
+        intervals [12]:
+            xmin = 3.316788996600993 
+            xmax = 3.4194470480048427 
+            text = "363_h" 
+        intervals [13]:
+            xmin = 3.4194470480048427 
             xmax = 3.982562358276644 
             text = "" 

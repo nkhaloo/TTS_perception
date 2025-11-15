@@ -29,32 +29,56 @@ item []:
         name = "vowel" 
         xmin = 0 
         xmax = 3.695215419501134 
-        intervals: size = 7 
+        intervals: size = 13 
         intervals [1]:
             xmin = 0 
-            xmax = 0.951491716020789 
+            xmax = 0.6835681818118046 
             text = "" 
         intervals [2]:
+            xmin = 0.6835681818118046 
+            xmax = 0.7875054962848443 
+            text = "292" 
+        intervals [3]:
+            xmin = 0.7875054962848443 
+            xmax = 0.951491716020789 
+            text = "" 
+        intervals [4]:
             xmin = 0.951491716020789 
             xmax = 1.0983939542503023 
             text = "4" 
-        intervals [3]:
+        intervals [5]:
             xmin = 1.0983939542503023 
+            xmax = 1.2761830709632676 
+            text = "" 
+        intervals [6]:
+            xmin = 1.2761830709632676 
+            xmax = 1.3770636922585842 
+            text = "293" 
+        intervals [7]:
+            xmin = 1.3770636922585842 
             xmax = 1.610412606212254 
             text = "" 
-        intervals [4]:
+        intervals [8]:
             xmin = 1.610412606212254 
             xmax = 1.73605787898879 
             text = "5" 
-        intervals [5]:
+        intervals [9]:
             xmin = 1.73605787898879 
-            xmax = 2.503596139596139 
+            xmax = 2.4782806885735362 
             text = "" 
-        intervals [6]:
-            xmin = 2.503596139596139 
+        intervals [10]:
+            xmin = 2.4782806885735362 
             xmax = 2.650858385598224 
-            text = "6" 
-        intervals [7]:
+            text = "6_h" 
+        intervals [11]:
             xmin = 2.650858385598224 
+            xmax = 3.085379847856681 
+            text = "" 
+        intervals [12]:
+            xmin = 3.085379847856681 
+            xmax = 3.204007347782137 
+            text = "294_h" 
+        intervals [13]:
+            xmin = 3.204007347782137 
             xmax = 3.695215419501134 
             text = "" 

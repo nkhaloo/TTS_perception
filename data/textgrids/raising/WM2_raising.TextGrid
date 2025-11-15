@@ -29,32 +29,56 @@ item []:
         name = "vowel" 
         xmin = 0 
         xmax = 5.236439909297052 
-        intervals: size = 7 
+        intervals: size = 13 
         intervals [1]:
             xmin = 0 
-            xmax = 0.9688419454736451 
+            xmax = 0.6692219611397096 
             text = "" 
         intervals [2]:
-            xmin = 0.9688419454736451 
-            xmax = 1.1093008017161614 
-            text = "76_h" 
+            xmin = 0.6692219611397096 
+            xmax = 0.7922834603986917 
+            text = "364" 
         intervals [3]:
-            xmin = 1.1093008017161614 
-            xmax = 2.1505285874336595 
+            xmin = 0.7922834603986917 
+            xmax = 0.9688419454736451 
             text = "" 
         intervals [4]:
+            xmin = 0.9688419454736451 
+            xmax = 1.1093008017161614 
+            text = "76" 
+        intervals [5]:
+            xmin = 1.1093008017161614 
+            xmax = 1.3515647246962073 
+            text = "" 
+        intervals [6]:
+            xmin = 1.3515647246962073 
+            xmax = 1.4462782564164893 
+            text = "365" 
+        intervals [7]:
+            xmin = 1.4462782564164893 
+            xmax = 2.1505285874336595 
+            text = "" 
+        intervals [8]:
             xmin = 2.1505285874336595 
             xmax = 2.2487572676239216 
-            text = "77_h" 
-        intervals [5]:
+            text = "77" 
+        intervals [9]:
             xmin = 2.2487572676239216 
             xmax = 3.0849702072283613 
             text = "" 
-        intervals [6]:
+        intervals [10]:
             xmin = 3.0849702072283613 
             xmax = 3.1933618673097866 
             text = "78_h" 
-        intervals [7]:
+        intervals [11]:
             xmin = 3.1933618673097866 
+            xmax = 3.925893347609222 
+            text = "" 
+        intervals [12]:
+            xmin = 3.925893347609222 
+            xmax = 3.994245135806989 
+            text = "366_h" 
+        intervals [13]:
+            xmin = 3.994245135806989 
             xmax = 5.236439909297052 
             text = "" 
