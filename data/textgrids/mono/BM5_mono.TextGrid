@@ -29,7 +29,7 @@ item []:
         name = "vowel" 
         xmin = 0 
         xmax = 2.101746031746032 
-        intervals: size = 7 
+        intervals: size = 13 
         intervals [1]:
             xmin = 0 
             xmax = 0.130796186316935 
@@ -48,13 +48,37 @@ item []:
             text = "230" 
         intervals [5]:
             xmin = 0.29824726805150886 
-            xmax = 1.301828463572966 
+            xmax = 0.5230341625561884 
             text = "" 
         intervals [6]:
+            xmin = 0.5230341625561884 
+            xmax = 0.6429710807592748 
+            text = "421" 
+        intervals [7]:
+            xmin = 0.6429710807592748 
+            xmax = 0.8155800898858376 
+            text = "" 
+        intervals [8]:
+            xmin = 0.8155800898858376 
+            xmax = 0.9627275129913425 
+            text = "422_h" 
+        intervals [9]:
+            xmin = 0.9627275129913425 
+            xmax = 1.301828463572966 
+            text = "" 
+        intervals [10]:
             xmin = 1.301828463572966 
             xmax = 1.3910995592125839 
             text = "231_c" 
-        intervals [7]:
+        intervals [11]:
             xmin = 1.3910995592125839 
+            xmax = 1.7731649710488218 
+            text = "" 
+        intervals [12]:
+            xmin = 1.7731649710488218 
+            xmax = 1.9632625302722784 
+            text = "423_hc" 
+        intervals [13]:
+            xmin = 1.9632625302722784 
             xmax = 2.101746031746032 
             text = "" 
