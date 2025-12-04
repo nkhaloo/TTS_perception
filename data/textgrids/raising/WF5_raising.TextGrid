@@ -29,56 +29,80 @@ item []:
         name = "vowel" 
         xmin = 0 
         xmax = 3.7474603174603174 
-        intervals: size = 13 
+        intervals: size = 19 
         intervals [1]:
             xmin = 0 
-            xmax = 0.5480336855441529 
+            xmax = 0.23229248716768447 
             text = "" 
         intervals [2]:
+            xmin = 0.23229248716768447 
+            xmax = 0.3556409721398798 
+            text = "637" 
+        intervals [3]:
+            xmin = 0.3556409721398798 
+            xmax = 0.5480336855441529 
+            text = "" 
+        intervals [4]:
             xmin = 0.5480336855441529 
             xmax = 0.6555843837581012 
             text = "349_h" 
-        intervals [3]:
+        intervals [5]:
             xmin = 0.6555843837581012 
             xmax = 0.8148328304896962 
             text = "" 
-        intervals [4]:
+        intervals [6]:
             xmin = 0.8148328304896962 
             xmax = 0.9387669363210922 
             text = "61" 
-        intervals [5]:
+        intervals [7]:
             xmin = 0.9387669363210922 
             xmax = 1.1447517351630287 
             text = "" 
-        intervals [6]:
+        intervals [8]:
             xmin = 1.1447517351630287 
             xmax = 1.235170146384463 
             text = "350" 
-        intervals [7]:
+        intervals [9]:
             xmin = 1.235170146384463 
+            xmax = 1.2681842914699861 
+            text = "" 
+        intervals [10]:
+            xmin = 1.2681842914699861 
+            xmax = 1.3773946915122584 
+            text = "638_h" 
+        intervals [11]:
+            xmin = 1.3773946915122584 
             xmax = 1.5482131923281517 
             text = "" 
-        intervals [8]:
+        intervals [12]:
             xmin = 1.5482131923281517 
             xmax = 1.670879611776196 
             text = "62" 
-        intervals [9]:
+        intervals [13]:
             xmin = 1.670879611776196 
-            xmax = 2.503115700370796 
+            xmax = 1.9788619575532782 
             text = " " 
-        intervals [10]:
+        intervals [14]:
+            xmin = 1.9788619575532782 
+            xmax = 2.0349914428960583 
+            text = "639" 
+        intervals [15]:
+            xmin = 2.0349914428960583 
+            xmax = 2.503115700370796 
+            text = "" 
+        intervals [16]:
             xmin = 2.503115700370796 
             xmax = 2.602930592815401 
             text = "63_h" 
-        intervals [11]:
+        intervals [17]:
             xmin = 2.602930592815401 
             xmax = 3.07645336899905 
             text = "" 
-        intervals [12]:
+        intervals [18]:
             xmin = 3.07645336899905 
             xmax = 3.152683069056945 
             text = "351_h" 
-        intervals [13]:
+        intervals [19]:
             xmin = 3.152683069056945 
             xmax = 3.7474603174603174 
             text = "" 

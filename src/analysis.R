@@ -9,6 +9,8 @@ library(CAvariants)
 library(lme4)
 library(broom.mixed)
 library(lmerTest)
+library(cluster)
+
 
 # Load data
 df <- read_csv("/Users/noahkhaloo/Desktop/TTS_perception/data/survey_results/survey_results.csv")
@@ -151,96 +153,10 @@ df %>%
   )
 
 
-# --------------------------------------------------
-# MCA ON PARTICIPANT-LEVEL DEMOGRAPHICS
-# --------------------------------------------------
-demo <- df %>%
-  filter(block == "Demographics") %>%   # USE ONLY THIS BLOCK
-  select(
-    prolific_id,
-    age, ethnicity, dialect, first_language, other_languages,
-    gender, technologies_used, ai_use_frequency, ai_attitude
-  ) %>%
-  distinct(prolific_id, .keep_all = TRUE)
-
-# Convert to factors except prolific_id
-demo_factor <- demo %>%
-  mutate(across(-prolific_id, as.factor))
-
-# Run MCA
-mca_real <- MCA(demo_factor %>% select(-prolific_id), graph = FALSE)
-
-# Number of active variables (not total columns)  <-- FIXED
-Q <- ncol(demo_factor) - 1
-
-# Raw eigenvalues from MCA
-lambda <- mca_real$eig[, 1]
-
-# Benzécri correction
-lambda_benzecri <- (Q / (Q - 1)) * (lambda - (1 / Q))
-
-# Replace negatives with 0 (standard Benzecri step)
-lambda_benzecri[lambda_benzecri < 0] <- 0
-
-# Calculate percent variance explained
-percent_benzecri <- lambda_benzecri / sum(lambda_benzecri) * 100
-percent_benzecri
-
-# Build Benzécri DF for scree plot (FIRST 30 DIMENSIONS)
-benzecri_df <- tibble(
-  dim = seq_along(percent_benzecri),
-  corrected_variance = percent_benzecri
-) %>%
-  dplyr::filter(dim <= 30)
-
-ggplot(benzecri_df, aes(x = dim, y = corrected_variance)) +
-  geom_col(fill = "steelblue") +
-  geom_point(size = 3) +
-  geom_line() +
-  labs(
-    title = "Benzécri-Corrected Scree Plot (First 30 Dimensions)",
-    x = "Dimension",
-    y = "Corrected % Variance Explained"
-  ) +
-  scale_x_continuous(breaks = 1:30) +
-  theme_minimal(base_size = 14)
-
-# Extract MCA dimensions (same N as demo)
-mca_scores <- as.data.frame(mca_real$ind$coord[, 1:2])
-colnames(mca_scores) <- c("MCA1", "MCA2")
-
-# Attach MCA dims to participant IDs
-demo_with_mca <- bind_cols(
-  demo_factor %>% select(prolific_id),
-  mca_scores
-)
-
-# ---- Merge MCA dims back into full df ----
-df <- df %>%
-  left_join(demo_with_mca, by = "prolific_id")
-
-
-top_dim1 <- as.data.frame(mca_real$var$contrib) %>%
-  mutate(Category = rownames(.)) %>%
-  arrange(desc(`Dim 1`)) %>%
-  select(Category, `Dim 1`) %>%
-  slice(1:20)
-
-top_dim1
-
-top_dim2 <- as.data.frame(mca_real$var$contrib) %>%
-  mutate(Category = rownames(.)) %>%
-  arrange(desc(`Dim 2`)) %>%
-  select(Category, `Dim 2`) %>%
-  slice(1:20)
-
-top_dim2
-
 
 # -------------------------------
 # K-MEANS CLUSTERING
 # -------------------------------
-
 speaker_features <- df %>%
   group_by(speaker) %>%
   summarise(
@@ -254,6 +170,29 @@ scaled_features <- speaker_features %>%
   scale()
 
 set.seed(123)
+
+wss <- sapply(1:10, function(k) {
+  kmeans(scaled_features, centers = k, nstart = 50)$tot.withinss
+})
+
+plot(1:10, wss, type = "b",
+     pch = 19, frame = FALSE,
+     xlab = "Number of clusters K",
+     ylab = "Total within-cluster sum of squares")
+
+
+sil_width <- sapply(2:6, function(k) {
+  km <- kmeans(scaled_features, centers = k, nstart = 50)
+  ss <- silhouette(km$cluster, dist(scaled_features))
+  mean(ss[, 3])
+})
+
+plot(2:6, sil_width, type = "b",
+     pch = 19,
+     xlab = "Clusters",
+     ylab = "Average silhouette width")
+
+
 km <- kmeans(scaled_features, centers = 3, nstart = 50)
 
 speaker_clusters <- speaker_features %>%
@@ -272,6 +211,8 @@ cluster_labels <- speaker_clusters %>%
 
 # merge back
 df <- df %>% left_join(cluster_labels, by = "speaker")
+
+
 
 
 # -------------------------------
@@ -398,6 +339,7 @@ plot_personality <- function(data, trait_col) {
       axis.title = element_text(color = "black")
     )
 }
+
 plot_personality(df_filtered, friendly)
 
 plot_personality(df_filtered, trustworthy)
@@ -411,6 +353,7 @@ plot_personality(df_filtered, funny)
 plot_personality(df_filtered, pleasant)
 
 plot_personality(df_filtered, human_like)
+
 
 
 
@@ -444,7 +387,7 @@ personality_df <- df_filtered %>%
     prolific_id, speaker,
     competent, trustworthy, friendly, funny,
     professional, pleasant, human_like,
-    ground_truth_label, mean_gender_scale, MCA1, MCA2
+    ground_truth_label, mean_gender_scale
   )
 
 # model function 
@@ -457,7 +400,7 @@ fit_personality_model_clean <- function(personality_col) {
     select(
       prolific_id, speaker,
       ground_truth_label, mean_gender_scale,
-      MCA1, MCA2, human_like,
+      human_like,
       all_of(personality_col)
     ) %>%
     drop_na()
@@ -467,7 +410,7 @@ fit_personality_model_clean <- function(personality_col) {
     paste0(
       personality_col,
       " ~ ground_truth_label * mean_gender_scale + 
-         MCA1 + MCA2 + human_like +
+         human_like +
          (1 | prolific_id) + (1 | speaker)"
     )
   )
@@ -512,7 +455,7 @@ result_funny         <- fit_personality_model_clean("funny")
 result_trust         <- fit_personality_model_clean("trustworthy")
 result_professional  <- fit_personality_model_clean("professional")
 results_friendly     <- fit_personality_model_clean("friendly")
-result_pleasant      <- fit_personality_model_clean("pleasant")
+results_pleasant <- fit_personality_model_clean("pleasant")
 
 
 # human likeness ratings 
@@ -590,5 +533,20 @@ plot_human_likeness(speaker_personality, funny)
 plot_human_likeness(speaker_personality, professional)
 plot_human_likeness(speaker_personality, pleasant)
 
+
+# save df for acoustic analysis 
+df_save <- df %>%
+  group_by(speaker) %>%
+  summarise(
+    ground_truth_label = first(ground_truth_label),   # or most frequent, if needed
+    mean_gender_scale  = mean(gender_scale, na.rm = TRUE)
+  ) %>%
+  ungroup() %>%
+  distinct(speaker, ground_truth_label, mean_gender_scale)
+
+write_csv(
+  df_save,
+  "/Users/noahkhaloo/Desktop/TTS_perception/data/acoustic_data/formants/ground_truth_label.csv"
+)
 
 
