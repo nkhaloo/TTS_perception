@@ -10,6 +10,7 @@ library(lme4)
 library(broom.mixed)
 library(lmerTest)
 library(cluster)
+library(forcats)
 
 
 # Load data
@@ -99,6 +100,8 @@ gender_agreement_race_gender <- df %>%
     n = n(),
     .groups = "drop"
   )
+
+
 
 
 
@@ -213,8 +216,6 @@ cluster_labels <- speaker_clusters %>%
 df <- df %>% left_join(cluster_labels, by = "speaker")
 
 
-
-
 # -------------------------------
 # Density plot with ground truth label
 # -------------------------------
@@ -255,7 +256,7 @@ ggplot(df_density,
 
 
 # -------------------------------
-# Cluster Assignment Plot (ordered)
+# Cluster Assignment Plot 
 # -------------------------------
 df_plot <- df %>%
   distinct(speaker, percent_reported_black, ground_truth_label) %>%
@@ -293,66 +294,338 @@ ggplot(df_plot,
   )
 
 
+speaker_clusters2 <- speaker_features %>%
+  left_join(speaker_clusters %>% select(speaker, cluster),
+            by = "speaker") %>%
+  mutate(
+    category = substr(speaker, 1, 2),
+    cluster = factor(cluster)
+  )
+
+
+ggplot(speaker_clusters2,
+       aes(x = percent_reported_black,
+           y = fct_reorder(speaker, percent_reported_black),
+           color = cluster)) +
+  
+  geom_point(size = 5, alpha = 0.9) +
+  
+  scale_color_manual(values = c(
+    "1" = "#2b7de9",  # White cluster
+    "2" = "#c23b23",  # Black cluster
+    "3" = "gray40"    # Ambiguous cluster
+  )) +
+  
+  facet_wrap(~ category, scales = "free_y") +
+  
+  labs(
+    x = "% Reported Black",
+    y = "Speaker",
+    color = "Cluster",
+    #title = "Cluster Assignments by Speaker Category"
+  ) +
+  
+  theme_minimal(base_size = 14) +
+  theme(
+    panel.grid = element_blank(),
+    axis.line = element_line(color = "black"),
+    axis.text.y = element_text(color = "black"),
+    axis.text.x = element_text(color = "black"),
+    strip.text = element_text(face = "bold", size = 14)
+  )
+
+
+# -------------------------------
+# Create true gender
+# -------------------------------
+df <- df %>%
+  mutate(
+    true_gender = case_when(
+      !is.na(speaker) & str_sub(speaker, 2, 2) == "F" ~ "Female",
+      !is.na(speaker) & str_sub(speaker, 2, 2) == "M" ~ "Male",
+      TRUE ~ NA_character_   # demographic rows
+    )
+  )
+
+
+# -------------------------------
+# Individual speaker agreement 
+# -------------------------------
+listener_info <- df %>%
+  filter(block == "Demographics") %>%
+  select(prolific_id, ethnicity) %>%
+  distinct()
+
+  
+df_race <- df %>%
+  filter(block == "Race") %>%
+  select(prolific_id, speaker, perceived_race)
+
+
+df_race <- df_race %>%
+  left_join(listener_info, by = "prolific_id")
+
+
+df_race <- df_race %>%
+  filter(!is.na(ethnicity)) %>%    
+  mutate(
+    ethnicity_group = case_when(
+      ethnicity == "Asian American" ~ "Asian American",
+      ethnicity == "Black American" ~ "Black American",
+      ethnicity == "White American" ~ "White American",
+      ethnicity == "Hispanic/Latino American" ~ "Hispanic/Latino American",
+      str_detect(ethnicity, ";") & str_detect(ethnicity, "Black") ~ 
+        "Multiracial (Black included)",
+      str_detect(ethnicity, ";") ~ 
+        "Multiracial (Black not included)",
+      
+      TRUE ~ NA_character_
+    )
+  )
+
+df_race <- df_race %>%
+  mutate(
+    true_race = if_else(str_starts(speaker, "B"), "Black", "White"),
+    agreement = as.numeric(perceived_race == true_race)
+  )
+
+
+agreement_by_ethnicity <- df_race %>%
+  filter(!is.na(ethnicity_group)) %>%        # remove NA groups
+  group_by(ethnicity_group) %>%
+  summarise(
+    percent_agreement = mean(agreement, na.rm = TRUE) * 100,
+    se = se(agreement) * 100,
+    n = n(),
+    .groups = "drop"
+  )
+
+
+ggplot(agreement_by_ethnicity,
+       aes(x = ethnicity_group,
+           y = percent_agreement,
+           fill = ethnicity_group)) +
+  
+  geom_col(width = 0.6, color = "black") +
+  
+  geom_errorbar(aes(ymin = percent_agreement - se,
+                    ymax = percent_agreement + se),
+                width = 0.15, linewidth = 0.8) +
+  
+  geom_text(aes(label = sprintf("%.1f%%", percent_agreement),
+                y = percent_agreement + se + 3),
+            vjust = 0, size = 4.5) +
+  
+  labs(
+    x = "Listener Ethnicity Group",
+    y = "Agreement with Speaker Race Label (%)"
+  ) +
+  
+  # MAKE BARS TOUCH X-AXIS (same trick as earlier plot)
+  scale_y_continuous(expand = expansion(mult = c(0, 0))) +
+  coord_cartesian(ylim = c(0, 100)) +
+  
+  theme_minimal(base_size = 14) +
+  theme(
+    legend.position = "none",
+    axis.line = element_line(color = "black"),
+    panel.grid = element_blank(),
+    axis.text.x = element_text(angle = 25, hjust = 1, color = "black"),
+    axis.title = element_text(color = "black")
+  )
+
+
+df_race$ethnicity_group <- as.factor(df_race$ethnicity_group)
+df_race$ethnicity_group <- relevel(df_race$ethnicity_group, ref = "White American")
+
+
+model_ethnicity <- glmer(
+  agreement ~ ethnicity_group + (1 | prolific_id),
+  data = df_race,
+  family = binomial
+)
+
+
+summary(model_ethnicity)
+
+
+
+
 # -------------------------------
 # Personality analysis
-df_filtered <- df %>%
-  filter(ground_truth_label != "Ambiguous") 
+# -------------------------------
+personality_cols <- c("competent", "trustworthy", "friendly",
+                      "funny", "professional", "pleasant")
 
 
-# plotting function 
-plot_personality <- function(data, trait_col) {
-  
-  trait_col <- rlang::ensym(trait_col)   # allow unquoted column names
-  
-  ggplot(data,
-         aes(x = ground_truth_label,
-             y = !!trait_col,
-             fill = ground_truth_label,
-             color = ground_truth_label)) +
+speaker_personality <- df %>%
+  filter(block == "Personality") %>%          # ensure correct subset
+  group_by(speaker) %>%
+  summarise(
     
-    geom_violin(alpha = 0.5, trim = FALSE) +
-    geom_jitter(width = 0.15, size = 1.7, alpha = 0.7) +
+    # Means for each personality variable
+    across(
+      all_of(personality_cols),
+      ~ mean(.x, na.rm = TRUE),
+      .names = "mean_{.col}"
+    ),
     
+    # Standard errors for each trait (computed only on non-NA values)
+    across(
+      all_of(personality_cols),
+      ~ sd(.x, na.rm = TRUE) / sqrt(sum(!is.na(.x))),
+      .names = "se_{.col}"
+    ),
+    
+    # Optional extras from your dataset
+    percent_reported_black = first(percent_reported_black),
+    true_gender = first(true_gender),
+    ground_truth_label = first(ground_truth_label),
+    
+    .groups = "drop"
+  )
+
+
+speaker_long <- speaker_personality %>%
+  pivot_longer(
+    cols = matches("^(mean|se)_"),
+    names_to = c(".value", "trait"),
+    names_pattern = "(mean|se)_(.*)"
+  )
+
+speaker_long$ground_truth_label <- factor(
+  speaker_long$ground_truth_label,
+  levels = c("Black", "White", "Ambiguous")
+)
+
+
+plot_personality_by_gender <- function(data, gender_choice) {
+  df_gender <- data %>%
+    filter(true_gender == gender_choice)
+  df_summary <- df_gender %>%
+    group_by(trait, ground_truth_label) %>%
+    summarise(
+      mean = mean(mean, na.rm = TRUE),
+      se   = mean(se, na.rm = TRUE),
+      .groups = "drop"
+    )
+  ggplot(df_summary, aes(
+    x = ground_truth_label,
+    y = mean,
+    fill = ground_truth_label
+  )) +
+    geom_col(color = "black") +
+    geom_errorbar(
+      aes(ymin = mean - se, ymax = mean + se),
+      width = 0.25,
+      linewidth = 0.8
+    ) +
+    facet_wrap(~ trait, scales = "free") +
     scale_fill_manual(values = c(
-      "Black"      = "#c23b23",
-      "White"      = "#2b7de9",
-      "Ambiguous"  = "gray40"
-    )) +
-    scale_color_manual(values = c(
-      "Black"      = "#c23b23",
-      "White"      = "#2b7de9",
-      "Ambiguous"  = "gray40"
+      "White"     = "#2b7de9",
+      "Black"     = "#c23b23",
+      "Ambiguous" = "gray40"
     )) +
     
     labs(
+      #title = paste("Personality Trait Ratings for", gender_choice),
       x = "Ground Truth Label",
-      y = paste0(rlang::as_string(trait_col), " (Likert 1–7)"),
-      fill = "Ground Truth Label",
-      color = "Ground Truth Label"
+      y = "Mean Rating"
     ) +
     
-    theme_minimal(base_size = 14) +
+    scale_y_continuous(expand = c(0, 0), limits = c(0, 6)) +
+    
+    theme_bw() +
     theme(
-      panel.grid = element_blank(),
-      axis.line = element_line(color = "black"),
-      axis.text.x = element_text(color = "black"),
-      axis.title = element_text(color = "black")
+      legend.position = "none",
+      strip.text = element_text(size = 12, face = "bold")
     )
 }
 
-plot_personality(df_filtered, friendly)
+plot_personality_by_gender(speaker_long, "Female")
 
-plot_personality(df_filtered, trustworthy)
+plot_personality_by_gender(speaker_long, "Male")
 
-plot_personality(df_filtered, competent)
 
-plot_personality(df_filtered, professional)
 
-plot_personality(df_filtered, funny)
+# human like plot 
+human_like <- ("human_like")
+hl_df <- df %>%
+  filter(block == "Personality") %>%        
+  group_by(speaker) %>%
+  summarise(
+    
+    # Means for each personality variable
+    across(
+      all_of(human_like),
+      ~ mean(.x, na.rm = TRUE),
+      .names = "mean_{.col}"
+    ),
+    
+    # Standard errors for each trait (computed only on non-NA values)
+    across(
+      all_of(human_like),
+      ~ sd(.x, na.rm = TRUE) / sqrt(sum(!is.na(.x))),
+      .names = "se_{.col}"
+    ),
+    
+    # Optional extras from your dataset
+    percent_reported_black = first(percent_reported_black),
+    true_gender = first(true_gender),
+    ground_truth_label = first(ground_truth_label),
+    
+    .groups = "drop"
+  )
 
-plot_personality(df_filtered, pleasant)
+hl_df$ground_truth_label <- factor(hl_df$ground_truth_label,
+  levels = c("Black", "White", "Ambiguous")
+)
 
-plot_personality(df_filtered, human_like)
+plot_human_like <- function(data, gender_choice) {
+  
+  df_gender <- data %>%
+    filter(true_gender == gender_choice)
+  
+  # Summarize human-like by ground_truth_label
+  df_summary <- df_gender %>%
+    group_by(ground_truth_label) %>%
+    summarise(
+      mean = mean(mean_human_like, na.rm = TRUE),
+      se   = se(mean_human_like),
+      .groups = "drop"
+    )
+  
+  ggplot(df_summary, aes(
+    x = ground_truth_label,
+    y = mean,
+    fill = ground_truth_label
+  )) +
+    geom_col(color = "black") +
+    geom_errorbar(
+      aes(ymin = mean - se, ymax = mean + se),
+      width = 0.25,
+      linewidth = 0.8
+    ) +
+    scale_fill_manual(values = c(
+      "White"     = "#2b7de9",
+      "Black"     = "#c23b23",
+      "Ambiguous" = "gray40"
+    )) +
+    labs(
+      #title = paste("Human-Likeness Ratings for", gender_choice),
+      x = "Ground Truth Label",
+      y = "Human-Likeness Rating"
+    ) +
+    scale_y_continuous(expand = c(0, 0), limits = c(0, 6)) +
+    theme_bw() +
+    theme(
+      legend.position = "none",
+      strip.text = element_text(size = 12, face = "bold")
+    )
+}
+
+plot_human_like(hl_df, "Female")
+plot_human_like(hl_df, "Male")
 
 
 
@@ -360,185 +633,52 @@ plot_personality(df_filtered, human_like)
 # --------------------------------------------------
 # BUILD MODELING DATASET FOR PERSONALITY
 # --------------------------------------------------
-# 2. Add true speaker gender
-df_filtered <- df_filtered %>%
-  mutate(
-    true_gender = if_else(str_sub(speaker, 2, 2) == "F", "Female", "Male")
-  )
-
-speaker_gender_scale <- df_filtered %>%
-  group_by(speaker) %>%
-  summarise(
-    mean_gender_scale = mean(gender_scale, na.rm = TRUE),
-    .groups = "drop"
-  )
-
-df_filtered <- df_filtered %>%
-  left_join(speaker_gender_scale, by = "speaker")
-
-
-# 3. Build personality dataset (summarized per participant × speaker)
-personality_df <- df_filtered %>%
+personality_df <- df %>%
   filter(block == "Personality") %>%
   mutate(
-    ground_truth_label = factor(ground_truth_label, levels = c("White", "Black"))
+    ground_truth_label = factor(ground_truth_label, levels = c("White", "Black", "Ambiguous"))
   ) %>%
   select(
     prolific_id, speaker,
     competent, trustworthy, friendly, funny,
     professional, pleasant, human_like,
-    ground_truth_label, mean_gender_scale
+    ground_truth_label, true_gender
   )
 
-# model function 
-fit_personality_model_clean <- function(personality_col) {
-  
-  message("Fitting model for: ", personality_col)
-  
-  # Build modeling dataset
-  data_model <- personality_df %>%
-    select(
-      prolific_id, speaker,
-      ground_truth_label, mean_gender_scale,
-      human_like,
-      all_of(personality_col)
-    ) %>%
-    drop_na()
-  
-  # Model formula using ground truth label
-  model_formula <- as.formula(
-    paste0(
-      personality_col,
-      " ~ ground_truth_label * mean_gender_scale + 
-         human_like +
-         (1 | prolific_id) + (1 | speaker)"
+run_personality_models <- function(data, gender_choice) {
+  traits <- c("competent", "trustworthy", "friendly",
+              "funny", "professional", "pleasant")
+  df_gender <- data %>%
+    filter(true_gender == gender_choice)
+  model_results <- list()
+  for (trait in traits) {
+    form <- as.formula(
+      paste0(trait, " ~ ground_truth_label * human_like + ",
+             "(1 | prolific_id) + (1 | speaker)")
     )
-  )
+    
+    # Fit model
+    mod <- lmer(formula = form,
+                data = df_gender,
+                REML = FALSE)
+    
+    # Store summary
+    model_results[[trait]] <- summary(mod)
+  }
   
-  # Fit mixed-effects model
-  model <- lmer(model_formula, data = data_model)
-  
-  # Confidence intervals
-  ci <- confint(model, method = "Wald", level = 0.95)
-  ci_df <- as.data.frame(ci)
-  ci_df$term <- rownames(ci_df)
-  
-  # Fixed effects with p-values
-  fixed <- summary(model)$coef
-  fixed_df <- as.data.frame(fixed)
-  fixed_df$term <- rownames(fixed_df)
-  
-  # Merge CI
-  fixed_with_ci <- fixed_df %>%
-    left_join(ci_df, by = "term") %>%
-    select(
-      term,
-      Estimate,
-      `Std. Error`,
-      df,
-      `t value`,
-      `Pr(>|t|)`,
-      `2.5 %`,
-      `97.5 %`
-    )
-  
-  list(
-    summary = summary(model),        
-    fixed_effects = fixed_with_ci    
-  )
+  return(model_results)
 }
 
+female_models <- run_personality_models(personality_df, "Female")
+male_models <- run_personality_models(personality_df, "Male")
 
-# run models 
-result_competent     <- fit_personality_model_clean("competent")
-result_funny         <- fit_personality_model_clean("funny")
-result_trust         <- fit_personality_model_clean("trustworthy")
-result_professional  <- fit_personality_model_clean("professional")
-results_friendly     <- fit_personality_model_clean("friendly")
-results_pleasant <- fit_personality_model_clean("pleasant")
-
-
-# human likeness ratings 
-#create df with averages for personality ratings for plotting 
-speaker_personality <- df_filtered %>%
-  group_by(speaker) %>%
-  summarise(
-    competent    = mean(competent, na.rm = TRUE),
-    trustworthy  = mean(trustworthy, na.rm = TRUE),
-    friendly     = mean(friendly, na.rm = TRUE),
-    funny        = mean(funny, na.rm = TRUE),
-    professional = mean(professional, na.rm = TRUE),
-    pleasant     = mean(pleasant, na.rm = TRUE),
-    human_like   = mean(human_like, na.rm = TRUE),
-    
-    percent_reported_black = first(percent_reported_black),
-    true_gender = first(true_gender),
-    ground_truth_label = first(ground_truth_label),  # <-- important
-    .groups = "drop"
-  )
-
-
-plot_human_likeness <- function(data, trait_col) {
-  
-  trait_sym  <- rlang::ensym(trait_col)
-  trait_name <- rlang::as_string(trait_sym)
-  
-  ggplot(data,
-         aes(x = human_like,
-             y = !!trait_sym,
-             color = ground_truth_label)) +
-    
-    # POINTS COLORED BY GROUP
-    geom_point(alpha = 0.6, size = 2.2) +
-    
-    # ONE SINGLE REGRESSION LINE (NO GROUPING)
-    geom_smooth(
-      data = data,
-      aes(x = human_like, y = !!trait_sym),
-      inherit.aes = FALSE,
-      method = "lm",
-      formula = y ~ x,
-      color = "black",     # one line, one color
-      se = TRUE,
-      linewidth = 1.2
-    ) +
-    
-    scale_color_manual(values = c(
-      "White" = "#2b7de9",
-      "Black" = "#c23b23"
-    )) +
-    
-    labs(
-      x = "Human-Likeness Rating",
-      y = paste0(str_to_title(trait_name), " Rating"),
-      color = "Ground Truth Label",
-      title = paste0(str_to_title(trait_name),
-                     " ~ Human-Likeness (single regression line)")
-    ) +
-    
-    theme_minimal(base_size = 14) +
-    theme(
-      panel.grid = element_blank(),
-      axis.line  = element_line(color = "black"),
-      axis.text  = element_text(color = "black"),
-      axis.title = element_text(color = "black")
-    )
-}
-
-
-plot_human_likeness(speaker_personality, competent)
-plot_human_likeness(speaker_personality, trustworthy)
-plot_human_likeness(speaker_personality, friendly)
-plot_human_likeness(speaker_personality, funny)
-plot_human_likeness(speaker_personality, professional)
-plot_human_likeness(speaker_personality, pleasant)
 
 
 # save df for acoustic analysis 
 df_save <- df %>%
   group_by(speaker) %>%
   summarise(
-    ground_truth_label = first(ground_truth_label),   # or most frequent, if needed
+    ground_truth_label = first(ground_truth_label),   
     mean_gender_scale  = mean(gender_scale, na.rm = TRUE)
   ) %>%
   ungroup() %>%
