@@ -19,6 +19,23 @@ df <- read_csv("/Users/noahkhaloo/Desktop/TTS_perception/data/survey_results/sur
 # Standard error function
 se <- function(x) sd(x, na.rm = TRUE) / sqrt(sum(!is.na(x)))
 
+
+# clean df to keep only participants who completetd the study 
+required_blocks <- c("Personality", "Race", "Demographics")
+
+complete_pids <- df %>%
+  filter(block %in% required_blocks) %>%
+  distinct(prolific_id, block) %>%
+  count(prolific_id) %>%
+  filter(n == length(required_blocks)) %>%
+  pull(prolific_id)
+
+df <- df %>%
+  filter(prolific_id %in% complete_pids)
+
+df %>% 
+  summarise(n_unique_prolific_ids = n_distinct(prolific_id))
+
 # -------------------------------
 # RACE AGREEMENT
 # -------------------------------
@@ -102,7 +119,34 @@ gender_agreement_race_gender <- df %>%
   )
 
 
+gender_agreement_trials <- df %>%
+  filter(!is.na(gender_scale), !is.na(speaker)) %>%
+  mutate(
+    true_gender = if_else(str_sub(speaker, 2, 2) == "F", "Female", "Male"),
+    true_race = if_else(str_sub(speaker, 1, 1) == "B", "Black", "White"),
+    perceived_gender = if_else(gender_scale >= 3.5, "Male", "Female"),
+    agree = perceived_gender == true_gender
+  )
 
+
+gender_agreement_by_race <- gender_agreement_trials %>%
+  group_by(true_race, true_gender) %>%
+  summarise(
+    percent_agreement = mean(agree) * 100,
+    sd_agreement = sd(as.numeric(agree)) * 100,
+    n = n(),
+    .groups = "drop"
+  )
+
+gender_agreement_total <- gender_agreement_trials %>%
+  mutate(true_race = "Total") %>%
+  group_by(true_race, true_gender) %>%
+  summarise(
+    percent_agreement = mean(agree) * 100,
+    sd_agreement = sd(as.numeric(agree)) * 100,
+    n = n(),
+    .groups = "drop"
+  )
 
 
 # -------------------------------
@@ -120,7 +164,6 @@ df <- df %>%
 # -------------------------------
 # Density plot of %Reported Black
 # -------------------------------
-
 df %>% 
   distinct(speaker, percent_reported_black) %>%
   filter(!is.na(percent_reported_black)) %>%
@@ -131,18 +174,37 @@ df %>%
   
   geom_density(alpha = 0.3, linewidth = 1.2) +
   
-  scale_fill_manual(values = c(
-    "BF" = "#c23b23",
-    "BM" = "#6f42c1",
-    "WF" = "#2b7de9",
-    "WM" = "#28a745"
-  )) +
-  scale_color_manual(values = c(
-    "BF" = "#c23b23",
-    "BM" = "#6f42c1",
-    "WF" = "#2b7de9",
-    "WM" = "#28a745"
-  )) +
+  scale_fill_manual(
+    name = "Platform-Assigned Label",
+    values = c(
+      "BF" = "#c23b23",
+      "BM" = "#6f42c1",
+      "WF" = "#2b7de9",
+      "WM" = "#28a745"
+    ),
+    labels = c(
+      "BF" = "Black Female",
+      "BM" = "Black Male",
+      "WF" = "White Female",
+      "WM" = "White Male"
+    )
+  ) +
+  
+  scale_color_manual(
+    name = "Platform-Assigned Label",
+    values = c(
+      "BF" = "#c23b23",
+      "BM" = "#6f42c1",
+      "WF" = "#2b7de9",
+      "WM" = "#28a745"
+    ),
+    labels = c(
+      "BF" = "Black Female",
+      "BM" = "Black Male",
+      "WF" = "White Female",
+      "WM" = "White Male"
+    )
+  ) +
   
   scale_x_continuous(limits = c(0, 100), expand = c(0, 0)) +
   scale_y_continuous(expand = c(0, 0)) +
@@ -154,6 +216,7 @@ df %>%
     panel.grid = element_blank(),
     axis.line = element_line(color = "black")
   )
+
 
 
 
@@ -180,8 +243,8 @@ wss <- sapply(1:10, function(k) {
 
 plot(1:10, wss, type = "b",
      pch = 19, frame = FALSE,
-     xlab = "Number of clusters K",
-     ylab = "Total within-cluster sum of squares")
+     xlab = "Number of clusters (K)",
+     ylab = "Within-cluster sum of squares")
 
 
 sil_width <- sapply(2:6, function(k) {
@@ -219,27 +282,22 @@ df <- df %>% left_join(cluster_labels, by = "speaker")
 # -------------------------------
 # Density plot with ground truth label
 # -------------------------------
-df_density <- df %>%
-  distinct(speaker, percent_reported_black, ground_truth_label) %>%
-  filter(!is.na(percent_reported_black),
-         !is.na(ground_truth_label))
-
-ggplot(df_density,
+ggplot(speaker_clusters,
        aes(x = percent_reported_black,
-           fill = ground_truth_label,
-           color = ground_truth_label)) +
+           fill = cluster,
+           color = cluster)) +
   
   geom_density(alpha = 0.3, linewidth = 1.2) +
   
   scale_fill_manual(values = c(
-    "Black"      = "#c23b23",
-    "White"      = "#2b7de9",
-    "Ambiguous"  = "gray40"
+    "2"      = "#c23b23",
+    "1"      = "#2b7de9",
+    "3"  = "gray40"
   )) +
   scale_color_manual(values = c(
-    "Black"      = "#c23b23",
-    "White"      = "#2b7de9",
-    "Ambiguous"  = "gray40"
+    "2"      = "#c23b23",
+    "1"      = "#2b7de9",
+    "3"  = "gray40"
   )) +
   
   scale_x_continuous(limits = c(0, 100), expand = c(0, 0)) +
@@ -300,7 +358,17 @@ speaker_clusters2 <- speaker_features %>%
   mutate(
     category = substr(speaker, 1, 2),
     cluster = factor(cluster)
-  )
+  ) %>%
+  mutate(category = case_when(
+    category == "BF" ~ "Black Female",
+    category == "BM" ~ "Black Male",
+    category == "WF" ~ "White Female",
+    category == "WM" ~ "White Male")) %>%
+  mutate(perceptual_category = case_when(
+    cluster == 1 ~ "White", 
+    cluster == 2 ~ "Black", 
+    cluster == 3 ~ "Ambiguous"
+  ))
 
 
 ggplot(speaker_clusters2,
@@ -320,9 +388,8 @@ ggplot(speaker_clusters2,
   
   labs(
     x = "% Reported Black",
-    y = "Speaker",
-    color = "Cluster",
-    #title = "Cluster Assignments by Speaker Category"
+    y = "TTS voice",
+    color = "Cluster"
   ) +
   
   theme_minimal(base_size = 14) +
@@ -356,7 +423,9 @@ listener_info <- df %>%
   select(prolific_id, ethnicity) %>%
   distinct()
 
-  
+df <- df %>%
+  left_join(listener_info, by = "prolific_id")
+
 df_race <- df %>%
   filter(block == "Race") %>%
   select(prolific_id, speaker, perceived_race)
@@ -383,6 +452,17 @@ df_race <- df_race %>%
     )
   )
 
+
+
+ethnicity_percentages <- df_race %>%
+  filter(!is.na(ethnicity_group)) %>%
+  distinct(prolific_id, ethnicity_group) %>%   # one row per participant
+  count(ethnicity_group, name = "n_participants") %>%
+  mutate(
+    percent = 100 * n_participants / sum(n_participants)
+  )
+
+
 df_race <- df_race %>%
   mutate(
     true_race = if_else(str_starts(speaker, "B"), "Black", "White"),
@@ -391,7 +471,7 @@ df_race <- df_race %>%
 
 
 agreement_by_ethnicity <- df_race %>%
-  filter(!is.na(ethnicity_group)) %>%        # remove NA groups
+  filter(!is.na(ethnicity_group)) %>%      
   group_by(ethnicity_group) %>%
   summarise(
     percent_agreement = mean(agreement, na.rm = TRUE) * 100,
@@ -529,7 +609,7 @@ plot_personality_by_gender <- function(data, gender_choice) {
     
     labs(
       #title = paste("Personality Trait Ratings for", gender_choice),
-      x = "Ground Truth Label",
+      x = "Perceptually-assigned label",
       y = "Mean Rating"
     ) +
     
@@ -554,22 +634,16 @@ hl_df <- df %>%
   filter(block == "Personality") %>%        
   group_by(speaker) %>%
   summarise(
-    
-    # Means for each personality variable
     across(
       all_of(human_like),
       ~ mean(.x, na.rm = TRUE),
       .names = "mean_{.col}"
     ),
-    
-    # Standard errors for each trait (computed only on non-NA values)
     across(
       all_of(human_like),
       ~ sd(.x, na.rm = TRUE) / sqrt(sum(!is.na(.x))),
       .names = "se_{.col}"
     ),
-    
-    # Optional extras from your dataset
     percent_reported_black = first(percent_reported_black),
     true_gender = first(true_gender),
     ground_truth_label = first(ground_truth_label),
@@ -628,7 +702,37 @@ plot_human_like(hl_df, "Female")
 plot_human_like(hl_df, "Male")
 
 
+hl_df_mod_male <- df %>%
+  filter(block == "Personality") %>%
+  filter(true_gender == "Male") 
 
+hl_df_mod_male$ground_truth_label <- factor(hl_df_mod_male$ground_truth_label,
+                                   levels = c("White", "Black", "Ambiguous"))
+
+lm_hl_male <- lmer(
+  human_like ~ ground_truth_label + 
+    (1 | speaker) + (1 | prolific_id),
+  data = hl_df_mod_male
+)
+
+summary(lm_hl_male)
+
+
+hl_df_mod_female <- df %>%
+  filter(block == "Personality") %>%
+  filter(true_gender == "Female")
+
+hl_df_mod_female$ground_truth_label <- factor(hl_df_mod_female$ground_truth_label,
+                                            levels = c("White", "Black", "Ambiguous"))
+
+
+lm_hl_female <- lmer(
+  human_like ~ ground_truth_label + 
+    (1|speaker) + (1|prolific_id),
+  data = hl_df_mod_female
+)
+
+summary(lm_hl_female)
 
 # --------------------------------------------------
 # BUILD MODELING DATASET FOR PERSONALITY
@@ -636,33 +740,83 @@ plot_human_like(hl_df, "Male")
 personality_df <- df %>%
   filter(block == "Personality") %>%
   mutate(
-    ground_truth_label = factor(ground_truth_label, levels = c("White", "Black", "Ambiguous"))
+    # Ground-truth race labels for voices
+    ground_truth_label = factor(
+      ground_truth_label,
+      levels = c("White", "Black", "Ambiguous")
+    ),
+    
+    # Simplified participant ethnicity
+    ethnicity_group = case_when(
+      ethnicity.y == "White American" ~ "White American",
+      ethnicity.y == "Black American" ~ "Black American",
+      ethnicity.y == "Asian American" ~ "Asian American",
+      ethnicity.y == "Hispanic/Latino American" ~ "Hispanic/Latino American",
+      
+      str_detect(ethnicity.y, ";") & str_detect(ethnicity.y, "Black") ~ 
+        "Multiracial (Black included)",
+      
+      str_detect(ethnicity.y, ";") ~ 
+        "Multiracial (Black not included)",
+      
+      TRUE ~ NA_character_
+    ),
+    
+    ethnicity_group = factor(
+      ethnicity_group,
+      levels = c(
+        "White American",
+        "Black American",
+        "Asian American",
+        "Hispanic/Latino American",
+        "Multiracial (Black included)",
+        "Multiracial (Black not included)"
+      )
+    ),
+    
+    # Speaker gender and centered human-likeness
+    true_gender   = factor(true_gender),
+    human_like_c  = scale(human_like, center = TRUE, scale = FALSE)
   ) %>%
   select(
     prolific_id, speaker,
     competent, trustworthy, friendly, funny,
-    professional, pleasant, human_like,
-    ground_truth_label, true_gender
-  )
+    professional, pleasant,
+    human_like_c,
+    ground_truth_label, true_gender, ethnicity_group
+  ) %>%
+  filter(!is.na(ethnicity_group))
+
 
 run_personality_models <- function(data, gender_choice) {
-  traits <- c("competent", "trustworthy", "friendly",
-              "funny", "professional", "pleasant")
+  
+  traits <- c(
+    "competent", "trustworthy", "friendly",
+    "funny", "professional", "pleasant"
+  )
+  
   df_gender <- data %>%
     filter(true_gender == gender_choice)
+  
   model_results <- list()
+  
   for (trait in traits) {
+    
     form <- as.formula(
-      paste0(trait, " ~ ground_truth_label * human_like + ",
-             "(1 | prolific_id) + (1 | speaker)")
+      paste0(
+        trait,
+        " ~ ground_truth_label + human_like_c + ethnicity_group + ",
+        "(1 | prolific_id) + (1 | speaker)"
+      )
     )
     
-    # Fit model
-    mod <- lmer(formula = form,
-                data = df_gender,
-                REML = FALSE)
+    mod <- lmer(
+      formula = form,
+      data = df_gender,
+      REML = FALSE,
+      control = lmerControl(optimizer = "bobyqa")
+    )
     
-    # Store summary
     model_results[[trait]] <- summary(mod)
   }
   
@@ -670,8 +824,7 @@ run_personality_models <- function(data, gender_choice) {
 }
 
 female_models <- run_personality_models(personality_df, "Female")
-male_models <- run_personality_models(personality_df, "Male")
-
+male_models   <- run_personality_models(personality_df, "Male")
 
 
 # save df for acoustic analysis 
