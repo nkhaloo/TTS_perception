@@ -2,6 +2,9 @@ library(tidyverse)
 library(lme4)
 library(xgboost)
 library(purrr)
+library(patchwork)
+library(ggtext)
+
 
 
 set.seed(123)
@@ -122,6 +125,15 @@ df <- df %>%
 # filter out ambiguous 
 df <- df %>%
   filter(ground_truth_label != "Ambiguous")
+
+
+# get counts after filtering out ambiguous
+speaker_counts <- df%>%
+  select(speaker, gender, ground_truth_label) %>%
+  distinct() %>%   # one row per speaker
+  count(ground_truth_label, gender)
+
+speaker_counts
 
 
 # ---------------------
@@ -273,7 +285,7 @@ df_chunked <- df_chunked %>%
     id_cols = c(
       Filename,
       speaker,
-      gender,
+      gender, 
       ground_truth_label,
       modality,
       vowel,
@@ -451,13 +463,13 @@ importance_all <- importance_by_vowel %>%
   arrange(mean_gain)
 
 
-#save top 15 features (to compare later) 
+#save top 15 features for all gender model
 top15_unnamed <- importance_all %>%
   slice_max(mean_gain, n = 15) %>%
   arrange(mean_gain)
 
 
-#rename top 15 features for plot 
+#rename top 15 features for all-gender model 
 feature_labels <- c(
   sF1_mean_mid   = "F1 mean (mid point)",
   sF3_cov_beg    = "F3 CoV (vowel onset)",
@@ -484,7 +496,7 @@ top15 <- top15_unnamed %>%
 
 ggplot(top15,
        aes(x = mean_gain,
-           y = reorder(Feature, mean_gain))) +
+           y = reorder(Feature_label, mean_gain))) +
   geom_col(fill = "steelblue") +
   labs(
     x = "Mean Gain",
@@ -493,36 +505,8 @@ ggplot(top15,
   theme_minimal()
 
 
-# permutation test 
-permutation_test <- function(df, features) {
-  
-  df_perm <- df %>%
-    mutate(y = sample(y))
-  
-  fit_xgb_model(df_perm, features)$accuracy
-}
 
-
-perm_acc <- replicate(
-  50,
-  permutation_test(df_chunked_norm, feature_cols)
-)
-
-# chance accuracy = around 63%, matching that of random permutations
-df_chunked_norm %>%
-  count(y) %>%
-  mutate(prop = n / sum(n))
-
-
-# maybe run the same analysis only on males and see if you pull the same features 
-# if the formant feature go away 
-# f1 could just be a human size feature 
-# if you're finding that there are vowel specific differences, then you can conclude that there isa vowel quality difference
-# just look at the averages, plot the means, plot the scatterplot on an f1/f2 space
-
-# Maybe just create a model with the 5 major features and see where the means fall
-
-#try xgboost on male only df
+# run xgboost on male only df
 df_chunked_male <- df_chunked_norm %>%
   filter(gender != "female")
 
@@ -599,20 +583,52 @@ top15_male <- importance_male_all %>%
   slice_max(mean_gain, n = 15) %>%
   arrange(mean_gain)
 
+# rename male features 
+top15_male_labeled <- top15_male %>%
+  mutate(
+    Feature_label = recode(
+      Feature,
+      
+      CPP_cov_beg        = "CPP CoV (vowel onset)",
+      CPP_cov_end        = "CPP CoV (vowel offset)",
+      
+      SHR_mean_mid       = "SHR mean (mid point)",
+      
+      sF3_mean_beg       = "F3 mean (vowel onset)",
+      sF3_cov_beg        = "F3 CoV (vowel onset)",
+      sF3_cov_mid        = "F3 CoV (mid point)",
+      
+      sF1_cov_end        = "F1 CoV (vowel offset)",
+      
+      sF2_mean_end       = "F2 mean (vowel offset)",
+      
+      DF_cov_beg         = "DF CoV (vowel onset)",
+      
+      H1Res_mean_end     = "H1Res mean (vowel offset)",
+      H1Res_cov_mid      = "H1Res CoV (mid point)",
+      
+      H2H4c_mean_mid     = "H2–H4 mean (mid point)",
+      
+      H2KH5Kc_cov_beg    = "H2k–5kHz CoV (vowel onset)",
+      H2KH5Kc_mean_mid   = "H2k–5kHz mean (mid point)",
+      
+      H42Kc_cov_end      = "H4–2kHz CoV (vowel offset)"
+    )
+  )
 
-# ---------------------
-# Step 3: freeze top-15 feature sets (do this ONCE)
 
+# freeze top-15 feature sets 
 top15_all <- importance_all %>%
   slice_max(mean_gain, n = 15) %>%
   arrange(mean_gain) 
 
+
 # plot features from male model 
 ggplot(
-  top15_male,
+  top15_male_labeled,
   aes(
     x = mean_gain,
-    y = reorder(Feature, mean_gain)
+    y = reorder(Feature_label, mean_gain)
   )
 ) +
   geom_col(fill = "steelblue") +
@@ -659,6 +675,248 @@ overlap_features_cmp <- intersect(
 overlap_features_cmp
 length(overlap_features_cmp)
 
+
+
+
+# look at formants 
+df_vowel_means <- df_chunked_norm %>%
+  mutate(
+    F2_mean_vowel = rowMeans(
+      select(., sF2_mean_beg, sF2_mean_mid, sF2_mean_end),
+      na.rm = TRUE
+    ),
+    F3_mean_vowel = rowMeans(
+      select(., sF3_mean_beg, sF3_mean_mid, sF3_mean_end),
+      na.rm = TRUE
+    )
+  )
+
+
+df_plot <- df_vowel_means %>%
+  group_by(vowel, ground_truth_label) %>%
+  summarise(
+    F2_mean = mean(F2_mean_vowel, na.rm = TRUE),
+    F3_mean = mean(F3_mean_vowel, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  mutate(
+    `Listener-Assigned race` = ground_truth_label
+  )
+
+
+ggplot(
+  df_plot,
+  aes(
+    x = vowel,
+    y = F2_mean,
+    fill = `Listener-Assigned race`
+  )
+) +
+  geom_col(position = "dodge") +
+  labs(
+    x = "Vowel",
+    y = "Mean normalized F2",
+    fill = "Listener-Assigned race"
+  ) +
+  theme_minimal()
+
+
+ggplot(
+  df_plot,
+  aes(
+    x = vowel,
+    y = F3_mean,
+    fill = `Listener-Assigned race`
+  )
+) +
+  geom_col(position = "dodge") +
+  labs(
+    x = "Vowel",
+    y = "Mean normalized F3",
+    fill = "Listener-Assigned race"
+  ) +
+  theme_minimal()
+
+
+
+# validate model results  
+# define 5 features to validate 
+features_to_validate <- c(
+  "H42Kc_cov_end",      # H4–2kHz CoV (vowel offset)
+  "sF3_cov_mid",        # F3 CoV (mid vowel)
+  "H1Res_cov_mid",      # H1Res CoV (mid vowel)
+  "H2KH5Kc_mean_mid",   # H2k–5kHz mean (mid vowel)
+  "sF3_cov_beg"         # F3 CoV (vowel onset)
+)
+
+# cohen's d 
+cohens_d <- function(x, group) {
+  x1 <- x[group == "Black"]
+  x2 <- x[group == "White"]
+  
+  m1 <- mean(x1, na.rm = TRUE)
+  m2 <- mean(x2, na.rm = TRUE)
+  s1 <- sd(x1, na.rm = TRUE)
+  s2 <- sd(x2, na.rm = TRUE)
+  
+  sp <- sqrt(((length(x1)-1)*s1^2 + (length(x2)-1)*s2^2) /
+               (length(x1) + length(x2) - 2))
+  
+  (m1 - m2) / sp
+}
+
+
+d_results <- map_df(
+  features_to_validate,
+  function(feat) {
+    df_chunked_male %>%
+      group_by(vowel) %>%
+      summarise(
+        d = cohens_d(.data[[feat]], ground_truth_label),
+        feature = feat,
+        .groups = "drop"
+      )
+  }
+)
+
+d_results
+
+
+
+# logistic regression 
+fit_glm_z <- glm(
+  y ~ vowel +
+    scale(H42Kc_cov_end) +
+    scale(sF3_cov_mid) +
+    scale(H1Res_cov_mid) +
+    scale(H2KH5Kc_mean_mid) +
+    scale(sF3_cov_beg),
+  data = df_chunked_male,
+  family = binomial
+)
+
+summary(fit_glm_z)
+
+
+# All-gender model plot
+top15_all <- top15_all %>%
+  mutate(
+    Feature_label = recode(
+      Feature,
+      sF1_mean_mid        = "F1 mean (mid point)",
+      sF3_cov_beg         = "F3 CoV (vowel onset)",
+      DF_mean_beg         = "DF mean (vowel onset)",
+      sF1_mean_beg        = "F1 mean (vowel onset)",
+      H42Kc_cov_end       = "H4–2kHz CoV (vowel offset)",
+      H2KH5Kc_mean_beg    = "H2k–5kHz mean (vowel onset)",
+      H1Res_cov_end       = "H1Res CoV (vowel offset)",
+      sF0_cov_mid         = "F0 CoV (mid vowel)",
+      CPP_cov_end         = "CPP CoV (vowel offset)",
+      sF1_cov_mid         = "F1 CoV (mid point)",
+      sF1_cov_end         = "F1 CoV (vowel offset)",
+      sF4_cov_mid         = "F4 CoV (mid point)",
+      CPP_mean_beg        = "CPP mean (vowel onset)",
+      sF2_mean_beg        = "F2 mean (vowel onset)",
+      H42Kc_cov_beg       = "H4–2kHz CoV (vowel onset)"
+    )
+  )
+
+
+# overlapping raw feature names
+overlap_features <- c(
+  "sF3_cov_beg",
+  "H2KH5Kc_mean_mid",
+  "H42Kc_cov_end"
+)
+
+# ----------------------------
+# All-gender model plot
+# ----------------------------
+p_all <- ggplot(
+  top15_all,
+  aes(
+    x = mean_gain,
+    y = reorder(Feature_label, mean_gain)
+  )
+) +
+  geom_col(
+    aes(alpha = Feature %in% overlap_features),
+    fill = "steelblue"
+  ) +
+  scale_alpha_manual(
+    values = c("TRUE" = 1, "FALSE" = 0.35),
+    guide = "none"
+  ) +
+  scale_y_discrete(
+    position = "right",
+    labels = function(x) {
+      ifelse(
+        x %in% c(
+          "F3 CoV (vowel onset)",
+          "H4–2kHz CoV (vowel offset)",
+          "H2k–5kHz mean (mid point)"
+        ),
+        paste0("**", x, "**"),
+        x
+      )
+    }
+  ) +
+  labs(
+    title = "All-gender model",
+    x = "Mean Gain",
+    y = NULL
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.y = element_markdown()
+  )
+
+# ----------------------------
+# Male-only model plot (mirrored)
+# ----------------------------
+p_male <- ggplot(
+  top15_male_labeled,
+  aes(
+    x = -mean_gain,
+    y = reorder(Feature_label, mean_gain)
+  )
+) +
+  geom_col(
+    aes(alpha = Feature %in% overlap_features),
+    fill = "steelblue"
+  ) +
+  scale_alpha_manual(
+    values = c("TRUE" = 1, "FALSE" = 0.35),
+    guide = "none"
+  ) +
+  scale_x_continuous(labels = abs) +
+  scale_y_discrete(
+    labels = function(x) {
+      ifelse(
+        x %in% c(
+          "F3 CoV (vowel onset)",
+          "H4–2kHz CoV (vowel offset)",
+          "H2k–5kHz mean (mid point)"
+        ),
+        paste0("**", x, "**"),
+        x
+      )
+    }
+  ) +
+  labs(
+    title = "Male-only model",
+    x = "Mean Gain",
+    y = NULL
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.y = element_markdown()
+  )
+
+# ----------------------------
+# Combine plots
+# ----------------------------
+p_all | p_male
 
 
 
