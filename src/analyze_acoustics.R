@@ -4,13 +4,14 @@ library(lmerTest)
 library(xgboost)
 library(purrr)
 
+# set seed
 set.seed(555)
 
-# -----------------------
-# Load + join ground truth
+# load ground truth label from perception 
 ground_truth <- read_csv("/Users/noahkhaloo/Desktop/TTS_perception/data/acoustic_data/ground_truth_label.csv") %>%
   select(speaker, ground_truth_label)
 
+# load acoustic df 
 df <- read_csv("/Users/noahkhaloo/Desktop/TTS_perception/data/acoustic_data/output.csv") %>%
   mutate(speaker = substr(Filename, 1, 3)) %>%
   left_join(ground_truth, by = "speaker") %>%
@@ -31,12 +32,12 @@ df <- read_csv("/Users/noahkhaloo/Desktop/TTS_perception/data/acoustic_data/outp
   ) %>%
   filter(str_detect(Filename, "central|mono|raising|fronting"))
 
-# -----------------------
-# Add vowel metadata
+# load vowel codes
 vowel_codes <- read_csv("/Users/noahkhaloo/Desktop/TTS_perception/data/metadata/vowel_codes.csv") %>%
   rename(Label = "code") %>%
   mutate(Label = as.character(Label))
 
+#pre-processing 
 df <- df %>%
   left_join(vowel_codes, by = "Label") %>%
   mutate(
@@ -57,8 +58,6 @@ df <- df %>%
   drop_na(vowel) %>%
   filter(ground_truth_label != "Ambiguous")
 
-# -----------------------
-# Filter impossible values
 acoustic_vars <- c(
   "H1c", "H2H4c", "H42Kc", "H2KH5Kc",
   "CPP", "Energy", "SHR",
@@ -68,8 +67,7 @@ acoustic_vars <- c(
 df <- df %>%
   filter(if_all(all_of(acoustic_vars), ~ is.finite(.) & . != 0))
 
-# -----------------------
-# MAD outlier filtering within vowel
+#filter out outliers 
 is_not_outlier_mad <- function(x, k = 3.5) {
   med <- median(x, na.rm = TRUE)
   mad_val <- mad(x, constant = 1, na.rm = TRUE)
@@ -86,8 +84,7 @@ df_clean <- df %>%
   filter(!is_outlier) %>%
   select(-starts_with("keep_"), -is_outlier)
 
-# -----------------------
-# Compute H1Res (Energy residualization)
+# create residual h1
 df_clean <- df_clean %>%
   mutate(Energy = pmax(Energy, .Machine$double.eps))
 
@@ -101,13 +98,10 @@ beta_energy <- fixef(mod_h1)["log(Energy)"]
 df_clean <- df_clean %>%
   mutate(H1Res = H1c - beta_energy * log(Energy))
 
-# -----------------------
-# Formant dispersion
 df_clean <- df_clean %>%
   mutate(DF = ((sF2 - sF1) + (sF3 - sF2) + (sF4 - sF3)) / 3)
 
-# -----------------------
-# Min-max normalize within gender (as in your earlier pipeline)
+# normalize variables by max/min 
 norm_vars <- c("CPP","SHR","H1Res","H2H4c","H42Kc","H2KH5Kc","sF0","sF1","sF2","sF3","sF4","DF")
 
 minmax_norm <- function(x) {
@@ -121,18 +115,46 @@ df_clean <- df_clean %>%
   mutate(across(all_of(norm_vars), minmax_norm)) %>%
   ungroup()
 
-# =========================================================
-# Whole-vowel features (mean + CoV) and male-only model
-# =========================================================
-
 analysis_vars <- c("CPP","SHR","H1Res","H2H4c","H42Kc","H2KH5Kc","sF0","sF1","sF2","sF3","sF4","DF")
 
+# Delta formants
+df_delta <- df_clean %>%
+  group_by(Filename, Label, seg_Start, seg_End) %>%
+  mutate(
+    rel_pos = row_number() / n(),
+    chunk = case_when(
+      rel_pos <= 1/3 ~ "beg",
+      rel_pos >  2/3 ~ "end",
+      TRUE           ~ NA_character_
+    )
+  ) %>%
+  filter(!is.na(chunk)) %>%
+  group_by(Filename, Label, seg_Start, seg_End, chunk) %>%
+  summarise(
+    F1 = mean(sF1, na.rm = TRUE),
+    F2 = mean(sF2, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  pivot_wider(
+    id_cols = c(Filename, Label, seg_Start, seg_End),
+    names_from = chunk,
+    values_from = c(F1, F2),
+    names_glue = "{.value}_{chunk}"
+  ) %>%
+  mutate(
+    dF1 = F1_end - F1_beg,
+    dF2 = F2_end - F2_beg
+  ) %>%
+  select(Filename, Label, seg_Start, seg_End, dF1, dF2)
+
+#cov generation function
 cov_safe <- function(x) {
   m <- mean(x, na.rm = TRUE)
   if (is.na(m) || m == 0) return(NA_real_)
   sd(x, na.rm = TRUE) / m
 }
 
+# Mean across vowels 
 df_whole <- df_clean %>%
   group_by(Filename, speaker, gender, ground_truth_label, vowel, Label, modality, seg_Start, seg_End) %>%
   summarise(
@@ -146,80 +168,187 @@ df_whole <- df_clean %>%
     ),
     .groups = "drop"
   ) %>%
+  left_join(df_delta, by = c("Filename","Label","seg_Start","seg_End")) %>%
   filter(gender == "male") %>%
   mutate(y = ifelse(ground_truth_label == "Black", 1, 0))
 
 feature_cols_whole <- df_whole %>%
-  select(matches("_(mean|cov)$")) %>%
+  select(matches("_(mean|cov)$"), dF1, dF2) %>%
   colnames()
 
-# Modality-centering (same as before)
+#modality centering 
 df_whole <- df_whole %>%
   group_by(modality) %>%
   mutate(across(all_of(feature_cols_whole), ~ .x - mean(.x, na.rm = TRUE))) %>%
   ungroup()
 
-# -----------------------
-# Speaker-wise CV (grouped by speaker)
-fit_xgb_groupcv <- function(df, features, group_col = "speaker", nfold = 5, seed = 123) {
+
+# create df with vowel onset and offset for testing 
+df_chunked_long <- df_clean %>%
+  group_by(Filename, Label, seg_Start, seg_End) %>%
+  mutate(
+    rel_pos = row_number() / n(),
+    chunk = case_when(
+      rel_pos <= 1/3 ~ "beg",
+      rel_pos <= 2/3 ~ "mid",
+      TRUE           ~ "end"
+    )
+  ) %>%
+  ungroup() %>%
+  group_by(Filename, speaker, gender, ground_truth_label, vowel, Label, modality, seg_Start, seg_End, chunk) %>%
+  summarise(
+    across(
+      all_of(analysis_vars),
+      list(
+        mean = ~ mean(.x, na.rm = TRUE),
+        cov  = ~ cov_safe(.x)
+      ),
+      .names = "{col}_{fn}"
+    ),
+    .groups = "drop"
+  )
+
+df_chunked <- df_chunked_long %>%
+  pivot_wider(
+    id_cols = c(Filename, speaker, gender, ground_truth_label, modality, vowel, Label, seg_Start, seg_End),
+    names_from = chunk,
+    values_from = matches("_(mean|cov)$"),
+    names_glue = "{.value}_{chunk}"
+  ) %>%
+  filter(gender == "male") %>%
+  mutate(y = ifelse(ground_truth_label == "Black", 1, 0))
+
+feature_cols_chunked <- df_chunked %>%
+  select(matches("_(mean|cov)_(beg|mid|end)$")) %>%
+  colnames()
+
+df_chunked_male <- df_chunked %>%
+  group_by(modality) %>%
+  mutate(across(all_of(feature_cols_chunked), ~ .x - mean(.x, na.rm = TRUE))) %>%
+  ungroup()
+
+# create speaker-wise folds so models share the same splits
+make_speaker_folds <- function(df, group_col = "speaker", nfold = 5, seed = 123) {
+  set.seed(seed)
+  speakers <- df %>% distinct(.data[[group_col]]) %>% pull(.data[[group_col]])
+  k <- min(nfold, length(speakers))
+  fold_id <- sample(rep(1:k, length.out = length(speakers)))
+  tibble(!!group_col := speakers, fold = fold_id)
+}
+
+
+# create xgboost function that does speaker-wise cv
+fit_xgb_groupcv_folds <- function(df, features, group_col = "speaker", nfold = 5, seed = 123) {
   set.seed(seed)
   
-  # use the column indicated by group_col (default "speaker")
-  groups <- df %>% distinct(.data[[group_col]]) %>% pull(.data[[group_col]])
-  n_g <- length(groups)
+  if (!("fold" %in% names(df))) {
+    stop("Data frame must already contain a 'fold' column.")
+  }
   
-  k <- min(nfold, n_g)
-  if (k < 2) return(NA_real_)
-  
-  fold_id <- sample(rep(1:k, length.out = n_g))
-  fold_map <- tibble(!!group_col := groups, fold = fold_id)
-  
-  df2 <- df %>% left_join(fold_map, by = group_col)
+  df2 <- df
+  k <- length(unique(df2$fold))
   
   X <- as.matrix(df2[, features])
   y <- df2$y
-  dmat <- xgb.DMatrix(X, label = y)
   
   folds <- map(1:k, ~ which(df2$fold == .x))
   
-  cv <- xgb.cv(
-    data = dmat,
-    nrounds = 50,
-    folds = folds,
-    early_stopping_rounds = 10,
-    objective = "binary:logistic",
-    eval_metric = "error",
-    max_depth = 3,
-    eta = 0.1,
-    subsample = 0.8,
-    colsample_bytree = 0.8,
-    verbose = 0
-  )
+  fold_acc <- map_dbl(1:k, function(f) {
+    test_idx  <- folds[[f]]
+    train_idx <- setdiff(seq_len(nrow(df2)), test_idx)
+    
+    dtrain <- xgb.DMatrix(X[train_idx, , drop = FALSE], label = y[train_idx])
+    dtest  <- xgb.DMatrix(X[test_idx,  , drop = FALSE], label = y[test_idx])
+    
+    mod <- xgboost(
+      data = dtrain,
+      nrounds = 50,
+      objective = "binary:logistic",
+      eval_metric = "error",
+      max_depth = 3,
+      eta = 0.1,
+      subsample = 0.8,
+      colsample_bytree = 0.8,
+      verbose = 0
+    )
+    
+    p <- predict(mod, dtest)
+    pred <- ifelse(p >= 0.5, 1, 0)
+    mean(pred == y[test_idx])
+  })
   
-  1 - min(cv$evaluation_log$test_error_mean)
+  fold_levels <- sort(unique(df2$fold))
+  tibble(fold = fold_levels, accuracy = fold_acc)
+  
 }
 
-# Accuracy per vowel (speaker-wise CV)
-results_whole_male <- df_whole %>%
-  group_split(vowel) %>%
-  map_df(~ tibble(
-    vowel = unique(.x$vowel),
-    accuracy = fit_xgb_groupcv(.x, feature_cols_whole, group_col = "speaker", nfold = 5, seed = 123)
-  ))
 
-results_whole_male
+# Repeated speaker-wise CV comparison 
+run_one_trial <- function(seed, nfold = 5) {
+  fold_map <- make_speaker_folds(df_whole, group_col = "speaker", nfold = nfold, seed = seed)
+  
+  df_whole_cv <- df_whole %>% left_join(fold_map, by = "speaker")
+  df_chunked_cv <- df_chunked_male %>% left_join(fold_map, by = "speaker")
+  common_speakers <- intersect(unique(df_whole_cv$speaker), unique(df_chunked_cv$speaker))
+  df_whole_cv   <- df_whole_cv   %>% filter(speaker %in% common_speakers)
+  df_chunked_cv <- df_chunked_cv %>% filter(speaker %in% common_speakers)
+  stopifnot(!any(is.na(df_whole_cv$fold)))
+  stopifnot(!any(is.na(df_chunked_cv$fold)))
+  stopifnot(setequal(unique(df_whole_cv$fold), unique(df_chunked_cv$fold)))
+  folds_whole <- fit_xgb_groupcv_folds(df_whole_cv, feature_cols_whole) %>%
+    mutate(model = "whole", seed = seed)
+  
+  folds_chunked <- fit_xgb_groupcv_folds(df_chunked_cv, feature_cols_chunked) %>%
+    mutate(model = "chunked", seed = seed)
+  wide <- bind_rows(folds_whole, folds_chunked) %>%
+    select(seed, fold, model, accuracy) %>%
+    pivot_wider(names_from = model, values_from = accuracy) %>%
+    mutate(delta = chunked - whole)
+  list(
+    fold_level = wide,
+    seed_level = tibble(
+      seed = seed,
+      mean_whole = mean(wide$whole),
+      mean_chunked = mean(wide$chunked),
+      mean_delta = mean(wide$delta)
+    )
+  )
+}
 
-results_whole_male %>%
-  summarise(mean_new = mean(accuracy, na.rm = TRUE))
+# choose number of trials
+n_trials <- 50
+seeds <- 1:n_trials
 
-# -----------------------
-# Pooled model for feature importance (not CV)
+trial_out <- map(seeds, ~ run_one_trial(seed = .x, nfold = 5))
+
+fold_level_results <- map_df(trial_out, "fold_level")
+seed_level_results <- map_df(trial_out, "seed_level")
+
+# Summaries 
+seed_level_results %>%
+  summarise(
+    mean_whole   = mean(mean_whole),
+    mean_chunked = mean(mean_chunked),
+    avg_delta    = mean(mean_delta),
+    sd_delta     = sd(mean_delta),
+    n_pos        = sum(mean_delta > 0),
+    .groups = "drop"
+  )
+
+
+# Inference on seed-level deltas 
+t.test(seed_level_results$mean_delta) 
+wilcox.test(seed_level_results$mean_delta, mu = 0)
+
+
+
+# get importance on mean model 
 dmat_all <- xgb.DMatrix(
-  data = as.matrix(df_whole[, feature_cols_whole]),
-  label = df_whole$y
+  data = as.matrix(df_chunked_male[, feature_cols_chunked]),
+  label = df_chunked_male$y
 )
 
-model_all <- xgboost(
+model_chunked_all <- xgboost(
   data = dmat_all,
   nrounds = 50,
   objective = "binary:logistic",
@@ -231,24 +360,145 @@ model_all <- xgboost(
 )
 
 importance_all <- xgb.importance(
-  feature_names = feature_cols_whole,
-  model = model_all
+  feature_names = feature_cols_chunked,
+  model = model_chunked_all
 )
 
-top15_whole <- importance_all %>%
+top15_chunked <- importance_all %>%
   slice_max(Gain, n = 15) %>%
-  arrange(Gain)
+  arrange(Gain) %>%
+  mutate(
+    Feature_label = Feature %>%
+      # remove mean marker anywhere it occurs
+      str_replace_all("_mean_", "_") %>%   # keep separators stable
+      str_replace_all("_mean$", "") %>%    # just in case
+      
+      # mark CoV (handles both _cov_ and _cov)
+      str_replace_all("_cov_", "_CoV_") %>%
+      str_replace_all("_cov$", "_CoV") %>%
+      
+      # now rename acoustic feature stems (before chunk labeling)
+      str_replace("^H1Res", "Residual H1*") %>%
+      str_replace("^H2KH5Kc", "H2kHz*–H5kHz*") %>%
+      str_replace("^H42Kc", "H4*–H2kHz*") %>%
+      str_replace("^H2H4c", "H2*–H4*") %>%
+      str_replace("^CPP", "CPP") %>%
+      str_replace("^s", "") %>%
+      
+      # convert trailing chunk marker robustly:
+      # matches either "_beg" or "beg" at end (same for mid/end)
+      str_replace("(_)?beg$", " (onset)") %>%
+      str_replace("(_)?mid$", " (mid point)") %>%
+      str_replace("(_)?end$", " (offset)") %>%
+      
+      # clean up leftover underscores before/around CoV
+      str_replace_all("_CoV_", " CoV ") %>%
+      str_replace_all("_CoV", " CoV") %>%
+      str_replace_all("_", " ") %>%
+      str_squish()
+  )
 
+
+# plot importance
 ggplot(
-  top15_whole,
-  aes(x = Gain, y = reorder(Feature, Gain))
+  top15_chunked,
+  aes(x = Gain, y = reorder(Feature_label, Gain))
 ) +
   geom_col(fill = "steelblue") +
-  labs(x = "Gain", y = "Feature") +
+  labs(
+    x = "Gain",
+    y = "Acoustic feature"
+  ) +
   theme_minimal()
 
-# -----------------------
-# Cohen's d on top features (per vowel)
+
+
+# plot top features
+df_clean_male <- df_clean %>%
+  filter(gender == "male")
+
+vars_to_plot <- c("H1Res", "H2KH5Kc", "H42Kc", "DF")
+n_bins <- 9
+
+df_norm9 <- df_clean_male %>%
+  select(Filename, speaker, ground_truth_label, vowel, Label, modality, seg_Start, seg_End,
+         all_of(vars_to_plot)) %>%
+  group_by(Filename, Label, seg_Start, seg_End) %>%
+  mutate(
+    n_ms = n(),
+    t_norm = ifelse(n_ms == 1, 0.5, (row_number() - 1) / (n_ms - 1)),
+    t_bin = pmin(n_bins, floor(t_norm * n_bins) + 1)
+  ) %>%
+  ungroup()
+
+
+df_mean9 <- df_norm9 %>%
+  pivot_longer(all_of(vars_to_plot), names_to = "feature", values_to = "value") %>%
+  group_by(
+    Filename, Label, seg_Start, seg_End,
+    ground_truth_label, feature, t_bin
+  ) %>%
+  summarise(
+    token_mean = mean(value, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  group_by(ground_truth_label, feature, t_bin) %>%
+  summarise(
+    mean_value = mean(token_mean, na.rm = TRUE),
+    sd_value   = sd(token_mean, na.rm = TRUE),
+    n_tokens   = sum(!is.na(token_mean)),
+    se_value   = sd_value / sqrt(n_tokens),
+    ci_low     = mean_value - 1.96 * se_value,
+    ci_high    = mean_value + 1.96 * se_value,
+    .groups = "drop"
+  ) %>%
+  mutate(
+    t_norm_center = (t_bin - 0.5) / n_bins
+  ) %>%
+  mutate(
+    feature_label = feature %>%
+      str_replace("^H1Res$", "Residual H1*") %>%
+      str_replace("^H2KH5Kc$", "H2kHz*–H5kHz*") %>%
+      str_replace("^H42Kc$", "H4*–H2kHz*") %>%
+      str_replace("^DF$", " Formant Dispersion")
+  )
+
+
+
+
+ggplot(
+  df_mean9,
+  aes(
+    x = t_norm_center,
+    y = mean_value,
+    color = ground_truth_label,
+    fill  = ground_truth_label
+  )
+) +
+  geom_ribbon(
+    aes(ymin = ci_low, ymax = ci_high),
+    alpha = 0.2,
+    color = NA,
+    show.legend = FALSE
+  ) +
+  geom_line(linewidth = 1) +
+  geom_point(size = 2) +
+  facet_wrap(~ feature_label, scales = "free_y") +
+  scale_x_continuous(
+    breaks = seq(0, 1, by = 0.25),
+    limits = c(0, 1)
+  ) +
+  labs(
+    x = "Normalized Time",
+    y = "Mean normalized value",
+    color = "Perceptually-Assigned Race"
+  ) +
+  guides(fill = "none") +
+  theme_minimal()
+
+
+
+# cohen's d after elbow
 cohens_d <- function(x, group) {
   x1 <- x[group == "Black"]
   x2 <- x[group == "White"]
@@ -264,15 +514,20 @@ cohens_d <- function(x, group) {
   (m1 - m2) / sp
 }
 
-features_to_validate_whole <- importance_all %>%
-  arrange(desc(Gain)) %>%     # <-- ensure top first
-  slice_head(n = 7) %>%
-  pull(Feature)
+features_to_validate <- c(
+  "H1Res_mean_beg",
+  "H2KH5Kc_mean_mid",
+  "H1Res_mean_end",
+  "H42Kc_mean_end",
+  "H1Res_mean_mid",
+  "DF_cov_beg"
+)
 
-d_results_whole <- map_df(
-  features_to_validate_whole,
+
+d_results <- map_df(
+  features_to_validate,
   function(feat) {
-    df_whole %>%
+    df_chunked_male %>%
       group_by(vowel) %>%
       summarise(
         d = cohens_d(.data[[feat]], ground_truth_label),
@@ -282,45 +537,39 @@ d_results_whole <- map_df(
   }
 )
 
-d_results_whole
 
-d_summary_whole <- d_results_whole %>%
+d_summary <- d_results %>%
   group_by(feature) %>%
   summarise(
-    mean_d = mean(d, na.rm = TRUE),
+    mean_d   = mean(d, na.rm = TRUE),
     median_d = median(d, na.rm = TRUE),
-    n_pos = sum(d > 0, na.rm = TRUE),
-    n_neg = sum(d < 0, na.rm = TRUE),
-    .groups = "drop"
+    n_pos    = sum(d > 0, na.rm = TRUE),
+    n_neg    = sum(d < 0, na.rm = TRUE),
+    .groups  = "drop"
   ) %>%
   arrange(desc(abs(mean_d)))
 
-d_summary_whole
+
+d_results
+d_summary
 
 
+# per trait lm 
+df_chunked_male_lm <- df_chunked_male %>%
+  mutate(ground_truth_label = factor(ground_truth_label, levels = c("White", "Black")))
 
-# linear regression 
-library(tidyverse)
-library(lme4)
-library(lmerTest)
-library(purrr)
-
-df_whole <- df_whole %>%
-  mutate(
-    ground_truth_label = factor(ground_truth_label, levels = c("White", "Black"))
-  )
-
-features_lmm <- features_to_validate_whole   # top 7 features
+features_lmm <- c(
+  features_to_validate,
+  "DF_cov_beg"
+)
 
 lmm_results <- map_df(
   features_lmm,
   function(feat) {
     
     mod <- lmer(
-      as.formula(
-        paste(feat, "~ ground_truth_label + (1 | speaker) + (1 | vowel)")
-      ),
-      data = df_whole
+      as.formula(paste(feat, "~ ground_truth_label + (1 | speaker) + (1 | vowel)")),
+      data = df_chunked_male_lm
     )
     
     cf <- summary(mod)$coefficients
@@ -346,53 +595,156 @@ lmm_results <- map_df(
 lmm_results
 
 
+# look at F1 and F2 mean structure 
+# ================================
+# Reload acoustic data: sF1 / sF2 ONLY
+# Time-normalized mean trajectories
+# ================================
 
+vars_formant <- c("sF1", "sF2")
+n_bins <- 9
 
-
-
-
-
-# compare mean model to onnset/offset model
-feature_cols_chunked <- df_chunked_male %>%
-  select(matches("_(mean|cov)_(beg|mid|end)$")) %>%
-  colnames()
-
-results_chunked_groupcv <- df_chunked_male %>%
-  group_split(vowel) %>%
-  map_df(~ tibble(
-    vowel = unique(.x$vowel),
-    accuracy_chunked = fit_xgb_groupcv(
-      df = .x,
-      features = feature_cols_chunked,
-      group_col = "speaker",
-      nfold = 5,
-      seed = 123
+# reload acoustic df 
+df_formant <- read_csv("/Users/noahkhaloo/Desktop/TTS_perception/data/acoustic_data/output.csv") %>%
+  mutate(speaker = substr(Filename, 1, 3)) %>%
+  left_join(ground_truth, by = "speaker") %>%
+  select(
+    Filename, Label, seg_Start, seg_End,
+    sF1, sF2,
+    speaker, ground_truth_label
+  ) %>%
+  mutate(
+    modality = case_when(
+      str_ends(Label, "_hc") ~ "breathy_creaky",
+      str_ends(Label, "_c")  ~ "creaky",
+      str_ends(Label, "_h")  ~ "breathy",
+      TRUE                   ~ "modal"
+    ),
+    Label = str_remove(Label, "_(hc|c|h)$")
+  ) %>%
+  filter(str_detect(Filename, "central|mono|raising|fronting")) %>%
+  left_join(vowel_codes, by = "Label") %>%
+  mutate(
+    gender = substr(Filename, 2, 2),
+    gender = case_when(
+      gender == "F" ~ "female",
+      gender == "M" ~ "male",
+      TRUE ~ NA_character_
+    ),
+    vowel = case_when(
+      vowel %in% c("ɑh", "ah") ~ "ɑ",
+      vowel == "ih"            ~ "ɪ",
+      vowel == "ai"            ~ "æi",
+      vowel %in% c("ɑ'", "a")  ~ "æ",
+      TRUE ~ vowel
     )
-  ))
-
-comparison_chunk_vs_whole <- results_chunked_groupcv %>%
-  left_join(results_whole_male, by = "vowel") %>%
-  rename(accuracy_whole = accuracy) %>%
-  mutate(delta = accuracy_chunked - accuracy_whole)
-
-comparison_chunk_vs_whole %>%
-  summarise(
-    mean_chunked = mean(accuracy_chunked, na.rm = TRUE),
-    mean_whole   = mean(accuracy_whole, na.rm = TRUE),
-    mean_delta   = mean(delta, na.rm = TRUE)
+  ) %>%
+  drop_na(vowel) %>%
+  filter(
+    gender == "male",
+    ground_truth_label != "Ambiguous",
+    is.finite(sF1),
+    is.finite(sF2)
   )
 
-t.test(
-  comparison_chunk_vs_whole$accuracy_chunked,
-  comparison_chunk_vs_whole$accuracy_whole,
-  paired = TRUE
-)
 
-wilcox.test(
-  comparison_chunk_vs_whole$accuracy_chunked,
-  comparison_chunk_vs_whole$accuracy_whole,
-  paired = TRUE
-)
+
+df_norm9_F12 <- df_formant %>%
+  group_by(Filename, Label, seg_Start, seg_End) %>%
+  mutate(
+    n_ms = n(),
+    t_norm = ifelse(
+      n_ms == 1,
+      0.5,
+      (row_number() - 1) / (n_ms - 1)
+    ),
+    t_bin = pmin(n_bins, floor(t_norm * n_bins) + 1)
+  ) %>%
+  ungroup()
+
+
+df_token_F12 <- df_norm9_F12 %>%
+  pivot_longer(
+    all_of(vars_formant),
+    names_to = "feature",
+    values_to = "value"
+  ) %>%
+  group_by(
+    Filename, Label, seg_Start, seg_End,
+    vowel, ground_truth_label, feature, t_bin
+  ) %>%
+  summarise(
+    token_mean = mean(value, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+df_mean9_F12 <- df_token_F12 %>%
+  group_by(vowel, ground_truth_label, feature, t_bin) %>%
+  summarise(
+    mean_value = mean(token_mean, na.rm = TRUE),
+    sd_value   = sd(token_mean, na.rm = TRUE),
+    n_tokens   = sum(!is.na(token_mean)),
+    se_value   = sd_value / sqrt(n_tokens),
+    ci_low     = mean_value - 1.96 * se_value,
+    ci_high    = mean_value + 1.96 * se_value,
+    .groups = "drop"
+  ) %>%
+  mutate(
+    t_norm_center = (t_bin - 0.5) / n_bins,
+    feature_label = recode(feature, sF1 = "F1", sF2 = "F2")
+  )
+
+ggplot(
+  df_mean9_F12,
+  aes(
+    x = t_norm_center,
+    y = mean_value,
+    color = ground_truth_label,
+    fill  = ground_truth_label
+  )
+) +
+  geom_ribbon(
+    aes(ymin = ci_low, ymax = ci_high),
+    alpha = 0.2,
+    color = NA,
+    show.legend = FALSE
+  ) +
+  geom_line(linewidth = 1) +
+  geom_point(size = 2) +
+  facet_grid(feature_label ~ vowel, scales = "free_y") +
+  scale_x_continuous(
+    breaks = seq(0, 1, by = 0.25),
+    labels = scales::label_number(trim = TRUE),
+    limits = c(0, 1)
+  ) +
+  labs(
+    x = "Normalized Time",
+    y = "Mean sF value",
+    color = "Perceptually-Assigned Race"
+  ) +
+  theme(
+    ## VOWEL labels (top strips)
+    strip.text.x = element_text(
+      size = 18,
+      face = "bold"
+    ),
+    
+    ## F1 / F2 labels (left strips) — make upright + big
+    strip.text.y = element_text(
+      size = 18,
+      face = "bold",
+      angle = 0
+    ),
+    
+    ## optional: give row strips more room so text doesn't feel cramped
+    strip.placement = "outside",
+    
+    ## axis text (keep readable)
+    axis.text.x = element_text(size = 13),
+    axis.text.y = element_text(size = 14)
+  ) +
+  guides(fill = "none") +
+  theme_minimal(base_size = 13)
 
 
 
