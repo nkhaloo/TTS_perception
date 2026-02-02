@@ -714,14 +714,18 @@ ggplot(
   facet_grid(feature_label ~ vowel, scales = "free_y") +
   scale_x_continuous(
     breaks = seq(0, 1, by = 0.25),
-    labels = scales::label_number(trim = TRUE),
-    limits = c(0, 1)
+    limits = c(0, 1),
+    labels = scales::label_number(
+      accuracy = 0.1
+    )
   ) +
   labs(
     x = "Normalized Time",
-    y = "Mean sF value",
+    y = "Mean formant value",
     color = "Perceptually-Assigned Race"
   ) +
+  guides(fill = "none") +
+  theme_minimal(base_size = 13) +   # ← FIRST
   theme(
     ## VOWEL labels (top strips)
     strip.text.x = element_text(
@@ -729,23 +733,207 @@ ggplot(
       face = "bold"
     ),
     
-    ## F1 / F2 labels (left strips) — make upright + big
+    panel.spacing.x = unit(1.5, "lines"),
+    
     strip.text.y = element_text(
       size = 18,
       face = "bold",
       angle = 0
     ),
     
-    ## optional: give row strips more room so text doesn't feel cramped
     strip.placement = "outside",
     
-    ## axis text (keep readable)
     axis.text.x = element_text(size = 13),
     axis.text.y = element_text(size = 14)
-  ) +
-  guides(fill = "none") +
-  theme_minimal(base_size = 13)
+  )
 
+
+# random number generator model (worst performance)
+# every feature in the kitchen sink (best model)
+# refined model. where does my accuracy land. 
+
+# then talk about those features 
+
+# insert random number feature 
+# add modality centered an non-modality centered 
+# how much worse did model get when you got rid of all the features that aren't bad 
+
+# ============================================================
+# KITCHEN SINK MODEL (chunked): raw + vowel×modality-centered + vowel one-hot
+# Paste this at the end of your script
+# ============================================================
+
+# Prefer df_chunked (raw male chunked, BEFORE any centering)
+df_chunked_base <- df_chunked
+
+# ---- 1) Build vowel×modality-centered duplicates for every chunked feature ----
+add_vowel_modality_centered <- function(df, feature_cols,
+                                        vowel_col = "vowel",
+                                        modality_col = "modality",
+                                        suffix = "_vmc") {
+  df %>%
+    group_by(.data[[vowel_col]], .data[[modality_col]]) %>%
+    mutate(across(
+      all_of(feature_cols),
+      ~ .x - mean(.x, na.rm = TRUE),
+      .names = paste0("{col}", suffix)
+    )) %>%
+    ungroup()
+}
+
+# ---- 2) Add vowel one-hot columns ----
+add_vowel_onehot <- function(df, vowel_col = "vowel", prefix = "vowel_") {
+  mm <- model.matrix(stats::as.formula(paste0("~", vowel_col, " - 1")), data = df)
+  mm <- as_tibble(mm)
+  names(mm) <- gsub(paste0("^", vowel_col), prefix, names(mm))
+  bind_cols(df, mm)
+}
+
+# Ensure your existing raw chunked feature list exists:
+# feature_cols_chunked <- df_chunked %>% select(matches("_(mean|cov)_(beg|mid|end)$")) %>% colnames()
+
+# Create kitchen-sink df: add centered duplicates + vowel one-hot
+df_chunked_kitchensink <- df_chunked_base %>%
+  add_vowel_modality_centered(feature_cols_chunked,
+                              vowel_col = "vowel",
+                              modality_col = "modality",
+                              suffix = "_vmc") %>%
+  add_vowel_onehot(vowel_col = "vowel", prefix = "vowel_")
+
+# Add a zero-valued negative control feature
+df_chunked_kitchensink <- df_chunked_kitchensink %>%
+  mutate(zero_feature = 0)
+
+# Final feature list: raw + vowel×modality-centered + vowel dummies
+vowel_cols <- names(df_chunked_kitchensink) %>% stringr::str_subset("^vowel_")
+
+feature_cols_kitchensink <- c(
+  feature_cols_chunked,                       # raw
+  paste0(feature_cols_chunked, "_vmc"),       # centered within vowel×modality
+  vowel_cols,
+  "zero_feature" 
+)
+
+# Safety: ensure finite numeric features (xgboost dislikes Inf)
+df_chunked_kitchensink <- df_chunked_kitchensink %>%
+  mutate(across(all_of(feature_cols_kitchensink), ~ ifelse(is.finite(.x), .x, NA_real_)))
+
+# ---- 3) Speaker-wise CV on kitchen sink features ----
+run_one_trial_kitchensink <- function(seed, nfold = 5) {
+  fold_map <- make_speaker_folds(df_chunked_kitchensink, group_col = "speaker", nfold = nfold, seed = seed)
+  df_cv <- df_chunked_kitchensink %>% left_join(fold_map, by = "speaker")
+  fit_xgb_groupcv_folds(df_cv, feature_cols_kitchensink) %>%
+    mutate(model = "chunked_kitchen_sink", seed = seed)
+}
+
+n_trials <- 50
+seeds <- 1:n_trials
+
+ks_out <- purrr::map(seeds, ~ run_one_trial_kitchensink(seed = .x, nfold = 5))
+ks_results <- dplyr::bind_rows(ks_out)
+
+# Summarise across folds within each seed, then across seeds
+ks_seed_level <- ks_results %>%
+  group_by(seed) %>%
+  summarise(mean_acc = mean(accuracy), .groups = "drop")
+
+ks_seed_level %>%
+  summarise(
+    mean_acc = mean(mean_acc),
+    sd_acc   = sd(mean_acc),
+    n_trials = dplyr::n(),
+    .groups = "drop"
+  )
+
+# Inspect feature count
+length(feature_cols_kitchensink)
+
+
+# ============================================================
+# FINAL MODEL: train on all data (kitchen sink)
+# ============================================================
+
+dmat_all <- xgb.DMatrix(
+  data  = as.matrix(df_chunked_kitchensink[, feature_cols_kitchensink]),
+  label = df_chunked_kitchensink$y
+)
+
+model_kitchensink_all <- xgboost(
+  data = dmat_all,
+  nrounds = 50,
+  objective = "binary:logistic",
+  eval_metric = "logloss",
+  max_depth = 3,
+  eta = 0.1,
+  subsample = 0.8,
+  colsample_bytree = 0.8,
+  verbose = 0
+)
+
+
+importance_all <- xgb.importance(
+  feature_names = feature_cols_kitchensink,
+  model = model_kitchensink_all
+)
+
+# Look at top features
+top20 <- importance_all %>%
+  slice_max(Gain, n = 20)
+
+top20
+
+
+importance_pretty <- importance_all %>%
+  mutate(
+    Feature_label = Feature %>%
+      # identify centered features
+      str_replace("_vmc$", " (vowel×modality-centered)") %>%
+      
+      # remove mean marker
+      str_replace("_mean_", "_") %>%
+      str_replace("_mean$", "") %>%
+      
+      # CoV formatting
+      str_replace("_cov_", " CoV ") %>%
+      str_replace("_cov$", " CoV") %>%
+      
+      # acoustic renames
+      str_replace("^H1Res", "Residual H1*") %>%
+      str_replace("^H2KH5Kc", "H2kHz*–H5kHz*") %>%
+      str_replace("^H42Kc", "H4*–H2kHz*") %>%
+      str_replace("^H2H4c", "H2*–H4*") %>%
+      str_replace("^CPP", "CPP") %>%
+      str_replace("^DF", "Formant Dispersion") %>%
+      str_replace("^s", "") %>%
+      
+      # chunk labels
+      str_replace("_beg$", " (onset)") %>%
+      str_replace("_mid$", " (midpoint)") %>%
+      str_replace("_end$", " (offset)") %>%
+      
+      # vowel dummies
+      str_replace("^vowel_", "Vowel = ") %>%
+      
+      # cleanup
+      str_replace_all("_", " ") %>%
+      str_squish()
+  )
+
+
+top15_pretty <- importance_pretty %>%
+  slice_max(Gain, n = 15) %>%
+  arrange(Gain)
+
+ggplot(
+  top15_pretty,
+  aes(x = Gain, y = reorder(Feature_label, Gain))
+) +
+  geom_col(fill = "steelblue") +
+  labs(
+    x = "Gain",
+    y = "Feature"
+  ) +
+  theme_minimal(base_size = 13)
 
 
 
