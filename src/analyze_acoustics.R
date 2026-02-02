@@ -936,4 +936,49 @@ ggplot(
   theme_minimal(base_size = 13)
 
 
+# top 15 model 
+top15_features <- importance_all %>%
+  slice_max(Gain, n = 15) %>%
+  pull(Feature)
+
+# ============================================================
+# TOP-15 MODEL: 50-trial speaker-wise CV
+# ============================================================
+
+# (1) Define the CV runner if you haven't already
+run_one_trial_top15 <- function(seed, nfold = 5) {
+  fold_map <- make_speaker_folds(
+    df_chunked_kitchensink,
+    group_col = "speaker",
+    nfold = nfold,
+    seed = seed
+  )
+  
+  df_cv <- df_chunked_kitchensink %>%
+    left_join(fold_map, by = "speaker")
+  
+  fit_xgb_groupcv_folds(df_cv, top15_features) %>%
+    mutate(model = "top15", seed = seed)
+}
+
+# (2) Run 50 trials
+n_trials <- 50
+seeds <- 1:n_trials
+
+top15_results <- purrr::map_df(seeds, ~ run_one_trial_top15(seed = .x, nfold = 5))
+
+# (3) Seed-level mean accuracy (averaging across folds)
+top15_seed_level <- top15_results %>%
+  group_by(seed) %>%
+  summarise(mean_acc = mean(accuracy), .groups = "drop")
+
+# Overall summary
+top15_seed_level %>%
+  summarise(
+    mean_acc = mean(mean_acc),
+    sd_acc   = sd(mean_acc),
+    n_trials = n(),
+    .groups = "drop"
+  )
+
 
