@@ -4,7 +4,7 @@ library(lmerTest)
 library(xgboost)
 library(purrr)
 
-# set seed
+# set script seed
 set.seed(555)
 
 # load ground truth label from perception 
@@ -155,7 +155,7 @@ cov_safe <- function(x) {
 }
 
 
-# create df with vowel onset and offset for testing 
+# create df with vowel onset/midpoint/offset for testing 
 df_chunked_long <- df_clean %>%
   group_by(Filename, Label, seg_Start, seg_End) %>%
   mutate(
@@ -199,69 +199,6 @@ df_chunked_male <- df_chunked %>%
   mutate(across(all_of(feature_cols_chunked), ~ .x - mean(.x, na.rm = TRUE))) %>%
   ungroup()
 
-# create speaker-wise folds so models share the same splits
-make_speaker_folds <- function(df, group_col = "speaker", nfold = 5, seed = 123) {
-  set.seed(seed)
-  speakers <- df %>% distinct(.data[[group_col]]) %>% pull(.data[[group_col]])
-  k <- min(nfold, length(speakers))
-  fold_id <- sample(rep(1:k, length.out = length(speakers)))
-  tibble(!!group_col := speakers, fold = fold_id)
-}
-
-
-# create xgboost function that does speaker-wise cv
-fit_xgb_groupcv_folds <- function(df, features,
-                                  group_col = "speaker",
-                                  nfold = 5,
-                                  seed = 123,
-                                  nrounds = 50) {
-  set.seed(seed)
-  
-  if (!("fold" %in% names(df))) {
-    stop("Data frame must already contain a 'fold' column.")
-  }
-  
-  df2 <- df
-  k <- length(unique(df2$fold))
-  
-  X <- as.matrix(df2[, features])
-  y <- df2$y
-  
-  folds <- map(1:k, ~ which(df2$fold == .x))
-  
-  fold_acc <- map_dbl(1:k, function(f) {
-    test_idx  <- folds[[f]]
-    train_idx <- setdiff(seq_len(nrow(df2)), test_idx)
-    
-    dtrain <- xgb.DMatrix(X[train_idx, , drop = FALSE], label = y[train_idx])
-    dtest  <- xgb.DMatrix(X[test_idx,  , drop = FALSE], label = y[test_idx])
-    
-    mod <- xgboost(
-      data = dtrain,
-      nrounds = nrounds,
-      objective = "binary:logistic",
-      eval_metric = "error",
-      max_depth = 3,
-      eta = 0.1,
-      subsample = 0.8,
-      colsample_bytree = 0.8,
-      verbose = 0
-    )
-    
-    p <- predict(mod, dtest)
-    pred <- ifelse(p >= 0.5, 1, 0)
-    mean(pred == y[test_idx])
-  })
-  
-  tibble(fold = sort(unique(df2$fold)), accuracy = fold_acc)
-}
-
-
-
-# KITCHEN SINK MODEL
-# Prefer df_chunked (raw male chunked, before  modality centering)
-df_chunked_base <- df_chunked
-
 # center by per-vowel modality means
 add_vowel_modality_centered <- function(df, feature_cols,
                                         vowel_col = "vowel",
@@ -287,7 +224,7 @@ add_vowel_onehot <- function(df, vowel_col = "vowel", prefix = "vowel_") {
 
 
 # Create kitchen-sink df
-df_chunked_kitchensink <- df_chunked_base %>%
+df_chunked_kitchensink <- df_chunked %>%
   add_vowel_modality_centered(feature_cols_chunked,
                               vowel_col = "vowel",
                               modality_col = "modality",
@@ -312,63 +249,175 @@ feature_cols_kitchensink <- c(
 df_chunked_kitchensink <- df_chunked_kitchensink %>%
   mutate(across(all_of(feature_cols_kitchensink), ~ ifelse(is.finite(.x), .x, NA_real_)))
 
+#df_chunked kitchen sink is the df i'm using from here on out
 
-# Speaker-wise CV on kitchen sink features 
-run_one_trial_kitchensink <- function(seed, nfold = 5, nrounds = 50) {
-  fold_map <- make_speaker_folds(df_chunked_kitchensink, group_col = "speaker", nfold = nfold, seed = seed)
-  df_cv <- df_chunked_kitchensink %>% left_join(fold_map, by = "speaker")
-  
-  fit_xgb_groupcv_folds(df_cv, feature_cols_kitchensink, nfold = nfold, seed = seed, nrounds = nrounds) %>%
-    mutate(model = paste0("chunked_kitchen_sink_", nrounds, "trees"), seed = seed)
+
+#######Grid search for hyperparameters and # of trees:  fixed objective + logloss, speaker-wise CV ######
+
+# create speaker-wise folds so models share the same splits
+make_speaker_folds <- function(df, group_col = "speaker", nfold = 5, seed = 123) {
+  set.seed(seed)
+  speakers <- df %>% distinct(.data[[group_col]]) %>% pull(.data[[group_col]])
+  k <- min(nfold, length(speakers))
+  fold_id <- sample(rep(1:k, length.out = length(speakers)))
+  tibble(!!group_col := speakers, fold = fold_id)
 }
 
 
-n_trials <- 50
-seeds <- 1:n_trials
+# # define grid search function (commented out because it takes forever to run)
+# xgb_groupcv_score <- function(df, features,
+#                               params,
+#                               nrounds,
+#                               folds_df,
+#                               threshold = 0.5) {
+#   
+#   df_cv <- df %>% left_join(folds_df, by = "speaker")
+#   if (!("fold" %in% names(df_cv))) stop("folds_df join failed (no 'fold' column after join).")
+#   
+#   X <- as.matrix(df_cv[, features])
+#   y <- df_cv$y
+#   fold_ids <- sort(unique(df_cv$fold))
+#   
+#   fold_acc <- map_dbl(fold_ids, function(fold_k) {
+#     test_idx  <- which(df_cv$fold == fold_k)
+#     train_idx <- setdiff(seq_len(nrow(df_cv)), test_idx)
+#     
+#     dtrain <- xgb.DMatrix(X[train_idx, , drop = FALSE], label = y[train_idx])
+#     dtest  <- xgb.DMatrix(X[test_idx,  , drop = FALSE], label = y[test_idx])
+#     
+#     bst <- xgb.train(
+#       params = params,
+#       data = dtrain,
+#       nrounds = nrounds,
+#       verbose = 0
+#     )
+#     
+#     p <- predict(bst, dtest)
+#     pred <- ifelse(p >= threshold, 1, 0)
+#     mean(pred == y[test_idx])
+#   })
+#   
+#   tibble(
+#     mean_acc = mean(fold_acc),
+#     sd_acc_folds = sd(fold_acc)
+#   )
+# }
+# 
+# # 2) grid runner: fixed folds for fair comparison across settings
+# run_gridsearch_groupcv_fixed <- function(df, features,
+#                                          grid,
+#                                          nfold = 5,
+#                                          fold_seed = 1,
+#                                          xgb_seed = 999,
+#                                          nthread = 1) {
+#   
+#   # fixed speaker folds for all configs
+#   folds_df <- make_speaker_folds(df, group_col = "speaker", nfold = nfold, seed = fold_seed)
+#   
+#   pmap_dfr(grid, function(nrounds, max_depth, eta, subsample,
+#                                  colsample_bytree, min_child_weight, gamma) {
+#     
+#     params <- list(
+#       objective = "binary:logistic",
+#       eval_metric = "logloss",
+#       max_depth = max_depth,
+#       eta = eta,
+#       subsample = subsample,
+#       colsample_bytree = colsample_bytree,
+#       min_child_weight = min_child_weight,
+#       gamma = gamma,
+#       seed = xgb_seed,
+#       nthread = nthread
+#     )
+#     
+#     score <- xgb_groupcv_score(
+#       df = df,
+#       features = features,
+#       params = params,
+#       nrounds = nrounds,
+#       folds_df = folds_df
+#     )
+#     
+#     tibble(
+#       objective = "binary:logistic",
+#       eval_metric = "logloss",
+#       nrounds = nrounds,
+#       max_depth = max_depth,
+#       eta = eta,
+#       subsample = subsample,
+#       colsample_bytree = colsample_bytree,
+#       min_child_weight = min_child_weight,
+#       gamma = gamma,
+#       mean_acc = score$mean_acc,
+#       sd_acc_folds = score$sd_acc_folds
+#     )
+#   }) %>%
+#     arrange(desc(mean_acc), sd_acc_folds)
+# }
+# 
+# # 3) define grid 
+# param_grid <- crossing(
+#   nrounds = c(50, 100, 150, 200, 250, 300),
+#   max_depth = c(2, 3, 4),
+#   eta = c(0.05, 0.1),
+#   subsample = c(0.8, 1.0),
+#   colsample_bytree = c(0.8, 1.0),
+#   min_child_weight = c(1, 5),
+#   gamma = c(0, 1)
+# )
+# 
+# # run the search
+# gs_results <- run_gridsearch_groupcv_fixed(
+#   df = df_chunked_kitchensink,
+#   features = feature_cols_kitchensink,
+#   grid = param_grid,
+#   nfold = 5,
+#   fold_seed = 1,   
+#   xgb_seed = 999,  # deterministic training
+#   nthread = 1      # deterministic across threads
+# )
+# 
+# # inspect top configs
+# gs_results %>% slice_head(n = 20)
+# 
+# # best config
+# best_cfg <- gs_results %>% slice_max(mean_acc, n = 1)
+# best_cfg
 
-ks_out <- map(seeds, ~ run_one_trial_kitchensink(seed = .x, nfold = 5))
-ks_results <- bind_rows(ks_out)
 
+########fit best model on all data#######
 
-# summarise across folds within each seed, then across seeds
-ks_seed_level <- ks_results %>%
-  group_by(seed) %>%
-  summarise(mean_acc = mean(accuracy), .groups = "drop")
-
-ks_seed_level %>%
-  summarise(
-    mean_acc = mean(mean_acc),
-    n_trials = n(),
-    .groups = "drop"
-  )
-
-# inspect feature count
-length(feature_cols_kitchensink)
-
-
-# final kitchen sink model
+#define dmatrix that holds feature matrix and labels that you pass into the model
 dmat_all <- xgb.DMatrix(
   data  = as.matrix(df_chunked_kitchensink[, feature_cols_kitchensink]),
   label = df_chunked_kitchensink$y
 )
 
+# define model and model specs (model that performed the best)
 model_kitchensink_all <- xgboost(
   data = dmat_all,
   nrounds = 50,
   objective = "binary:logistic",
   eval_metric = "logloss",
-  max_depth = 3,
+  max_depth = 4,
   eta = 0.1,
-  subsample = 0.8,
-  colsample_bytree = 0.8,
+  subsample = 1,
+  colsample_bytree = 1,
+  min_child_weight = 1,
+  gamma = 0,
+  seed = 999,
+  nthread = 1,  
   verbose = 0
 )
 
 
+
+#run the model on all the data and extract importance
 importance_all <- xgb.importance(
   feature_names = feature_cols_kitchensink,
   model = model_kitchensink_all
 )
+
 
 # Look at top features
 importance_pretty <- importance_all %>%
@@ -424,15 +473,69 @@ ggplot(
   theme_minimal(base_size = 13)
 
 
-# top 15 model 
+
+##### cross validate a model with only top 15 features and check accuracy #####
+
+# create xgboost function that does speaker-wise cv  on one dataset
+fit_xgb_groupcv_folds <- function(df, features,
+                                  group_col = "speaker",
+                                  nfold = 5,
+                                  seed = 123,
+                                  nrounds = 50) {
+  set.seed(seed)
+  
+  if (!("fold" %in% names(df))) {
+    stop("Data frame must already contain a 'fold' column.")
+  }
+  
+  df2 <- df
+  
+  X <- as.matrix(df2[, features])
+  y <- df2$y
+  
+  fold_levels <- sort(unique(df2$fold))
+  folds <- map(fold_levels, ~ which(df2$fold == .x))
+  
+  fold_acc <- map_dbl(seq_along(folds), function(f) {
+    test_idx  <- folds[[f]]
+    train_idx <- setdiff(seq_len(nrow(df2)), test_idx)
+    
+    dtrain <- xgb.DMatrix(X[train_idx, , drop = FALSE], label = y[train_idx])
+    dtest  <- xgb.DMatrix(X[test_idx,  , drop = FALSE], label = y[test_idx])
+    
+    mod <- xgboost(
+      data = dtrain,
+      nrounds = nrounds,
+      objective = "binary:logistic",
+      eval_metric = "logloss",
+      max_depth = 4,
+      eta = 0.1,
+      subsample = 1,
+      colsample_bytree = 1,
+      min_child_weight = 1,
+      gamma = 0,
+      seed = 999,
+      nthread = 1,  
+      verbose = 0
+    )
+    
+    p <- predict(mod, dtest)
+    pred <- ifelse(p >= 0.5, 1, 0)
+    mean(pred == y[test_idx])
+  })
+  
+  tibble(fold = fold_levels, accuracy = fold_acc)
+}
+
+
+#store top 15 features 
 top15_features <- importance_all %>%
   slice_max(Gain, n = 15) %>%
   pull(Feature)
 
 
-# TOP-15 MODEL
-# define the CV runner 
-run_one_trial_top15 <- function(seed, nfold = 5) {
+# define cv runner 
+top_15_cv <- function(seed, nfold = 5) {
   fold_map <- make_speaker_folds(
     df_chunked_kitchensink,
     group_col = "speaker",
@@ -446,6 +549,27 @@ run_one_trial_top15 <- function(seed, nfold = 5) {
   fit_xgb_groupcv_folds(df_cv, top15_features) %>%
     mutate(model = "top15", seed = seed)
 }
+
+#set number of trials and seed
+n_trials <- 50
+seeds <- 1:n_trials
+
+ks_out <- map(seeds, ~ top_15_cv(seed = .x, nfold = 5))
+ks_results <- bind_rows(ks_out)
+
+
+# summarise across folds within each seed, then across seeds
+ks_seed_level <- ks_results %>%
+  group_by(seed) %>%
+  summarise(mean_acc = mean(accuracy), .groups = "drop")
+
+ks_seed_level %>%
+  summarise(
+    mean_acc = mean(mean_acc),
+    n_trials = n(),
+    .groups = "drop"
+  )
+
 
 
 ######plotting mean structure #####
@@ -679,329 +803,6 @@ ggplot(
   ) +
   guides(fill = "none") +
   theme_minimal()
-
-
-
-
-
-# Grid search for hyperparameters and # of trees:  fixed objective + logloss, speaker-wise CV ---
-
-# create speaker-wise folds so models share the same splits
-make_speaker_folds <- function(df, group_col = "speaker", nfold = 5, seed = 123) {
-  set.seed(seed)
-  speakers <- df %>% distinct(.data[[group_col]]) %>% pull(.data[[group_col]])
-  k <- min(nfold, length(speakers))
-  fold_id <- sample(rep(1:k, length.out = length(speakers)))
-  tibble(!!group_col := speakers, fold = fold_id)
-}
-
-
-# scorer: speaker-wise CV accuracy 
-xgb_groupcv_score <- function(df, features,
-                              params,
-                              nrounds,
-                              folds_df,
-                              threshold = 0.5) {
-  
-  df_cv <- df %>% left_join(folds_df, by = "speaker")
-  if (!("fold" %in% names(df_cv))) stop("folds_df join failed (no 'fold' column after join).")
-  
-  X <- as.matrix(df_cv[, features])
-  y <- df_cv$y
-  fold_ids <- sort(unique(df_cv$fold))
-  
-  fold_acc <- purrr::map_dbl(fold_ids, function(fold_k) {
-    test_idx  <- which(df_cv$fold == fold_k)
-    train_idx <- setdiff(seq_len(nrow(df_cv)), test_idx)
-    
-    dtrain <- xgb.DMatrix(X[train_idx, , drop = FALSE], label = y[train_idx])
-    dtest  <- xgb.DMatrix(X[test_idx,  , drop = FALSE], label = y[test_idx])
-    
-    bst <- xgb.train(
-      params = params,
-      data = dtrain,
-      nrounds = nrounds,
-      verbose = 0
-    )
-    
-    p <- predict(bst, dtest)
-    pred <- ifelse(p >= threshold, 1, 0)
-    mean(pred == y[test_idx])
-  })
-  
-  tibble(
-    mean_acc = mean(fold_acc),
-    sd_acc_folds = sd(fold_acc)
-  )
-}
-
-# 2) grid runner: fixed folds for fair comparison across settings
-run_gridsearch_groupcv_fixed <- function(df, features,
-                                         grid,
-                                         nfold = 5,
-                                         fold_seed = 1,
-                                         xgb_seed = 999,
-                                         nthread = 1) {
-  
-  # fixed speaker folds for all configs
-  folds_df <- make_speaker_folds(df, group_col = "speaker", nfold = nfold, seed = fold_seed)
-  
-  pmap_dfr(grid, function(nrounds, max_depth, eta, subsample,
-                                 colsample_bytree, min_child_weight, gamma) {
-    
-    params <- list(
-      objective = "binary:logistic",
-      eval_metric = "logloss",
-      max_depth = max_depth,
-      eta = eta,
-      subsample = subsample,
-      colsample_bytree = colsample_bytree,
-      min_child_weight = min_child_weight,
-      gamma = gamma,
-      seed = xgb_seed,
-      nthread = nthread
-    )
-    
-    score <- xgb_groupcv_score(
-      df = df,
-      features = features,
-      params = params,
-      nrounds = nrounds,
-      folds_df = folds_df
-    )
-    
-    tibble(
-      objective = "binary:logistic",
-      eval_metric = "logloss",
-      nrounds = nrounds,
-      max_depth = max_depth,
-      eta = eta,
-      subsample = subsample,
-      colsample_bytree = colsample_bytree,
-      min_child_weight = min_child_weight,
-      gamma = gamma,
-      mean_acc = score$mean_acc,
-      sd_acc_folds = score$sd_acc_folds
-    )
-  }) %>%
-    arrange(desc(mean_acc), sd_acc_folds)
-}
-
-# 3) define grid 
-param_grid <- crossing(
-  nrounds = c(50, 100, 150, 200, 250, 300),
-  max_depth = c(2, 3, 4),
-  eta = c(0.05, 0.1),
-  subsample = c(0.8, 1.0),
-  colsample_bytree = c(0.8, 1.0),
-  min_child_weight = c(1, 5),
-  gamma = c(0, 1)
-)
-
-# run the search
-gs_results <- run_gridsearch_groupcv_fixed(
-  df = df_chunked_kitchensink,
-  features = feature_cols_kitchensink,
-  grid = param_grid,
-  nfold = 5,
-  fold_seed = 1,   
-  xgb_seed = 999,  # deterministic training
-  nthread = 1      # deterministic across threads
-)
-
-# inspect top configs
-gs_results %>% slice_head(n = 20)
-
-# best config
-best_cfg <- gs_results %>% slice_max(mean_acc, n = 1)
-best_cfg
-
-
-########fit best model on all data#######
-
-#define dmatrix that holds feature matrix and labels that you pass into the model
-dmat_all <- xgb.DMatrix(
-  data  = as.matrix(df_chunked_kitchensink[, feature_cols_kitchensink]),
-  label = df_chunked_kitchensink$y
-)
-
-# define model and model specs 
-model_kitchensink_all <- xgboost(
-  data = dmat_all,
-  nrounds = 50,
-  objective = "binary:logistic",
-  eval_metric = "logloss",
-  max_depth = 4,
-  eta = 0.1,
-  subsample = 1,
-  colsample_bytree = 1,
-  min_child_weight = 1,
-  gamma = 0,
-  nthread = 1,  
-  verbose = 0
-)
-
-
-
-#run the model on all the data and extract importance
-importance_all <- xgb.importance(
-  feature_names = feature_cols_kitchensink,
-  model = model_kitchensink_all
-)
-
-
-# Look at top features
-importance_pretty <- importance_all %>%
-  mutate(
-    Feature_label = Feature %>%
-      # identify centered features
-      str_replace("_vmc$", "") %>%
-      
-      # remove mean marker
-      str_replace("_mean_", "_") %>%
-      str_replace("_mean$", "") %>%
-      
-      # CoV formatting
-      str_replace("_cov_", " CoV ") %>%
-      str_replace("_cov$", " CoV") %>%
-      
-      # acoustic renames
-      str_replace("^H1Res", "Residual H1*") %>%
-      str_replace("^H2KH5Kc", "H2kHz*–H5kHz*") %>%
-      str_replace("^H42Kc", "H4*–H2kHz*") %>%
-      str_replace("^H2H4c", "H2*–H4*") %>%
-      str_replace("^CPP", "CPP") %>%
-      str_replace("^DF", "Formant Dispersion") %>%
-      str_replace("^s", "") %>%
-      
-      # chunk labels
-      str_replace("_beg$", " (onset)") %>%
-      str_replace("_mid$", " (midpoint)") %>%
-      str_replace("_end$", " (offset)") %>%
-      
-      # vowel dummies
-      str_replace("^vowel_", "Vowel = ") %>%
-      
-      # cleanup
-      str_replace_all("_", " ") %>%
-      str_squish()
-  )
-
-
-top15_pretty <- importance_pretty %>%
-  slice_max(Gain, n = 15) %>%
-  arrange(Gain)
-
-ggplot(
-  top15_pretty,
-  aes(x = Gain, y = reorder(Feature_label, Gain))
-) +
-  geom_col(fill = "steelblue") +
-  labs(
-    x = "Gain",
-    y = "Feature"
-  ) +
-  theme_minimal(base_size = 13)
-
-
-
-##### cross validate a model with only top 15 features and check accuracy #####
-
-# create xgboost function that does speaker-wise cv  on one dataset
-fit_xgb_groupcv_folds <- function(df, features,
-                                  group_col = "speaker",
-                                  nfold = 5,
-                                  seed = 123,
-                                  nrounds = 50) {
-  set.seed(seed)
-  
-  if (!("fold" %in% names(df))) {
-    stop("Data frame must already contain a 'fold' column.")
-  }
-  
-  df2 <- df
-  k <- length(unique(df2$fold))
-  
-  X <- as.matrix(df2[, features])
-  y <- df2$y
-  
-  folds <- map(1:k, ~ which(df2$fold == .x))
-  
-  fold_acc <- map_dbl(1:k, function(f) {
-    test_idx  <- folds[[f]]
-    train_idx <- setdiff(seq_len(nrow(df2)), test_idx)
-    
-    dtrain <- xgb.DMatrix(X[train_idx, , drop = FALSE], label = y[train_idx])
-    dtest  <- xgb.DMatrix(X[test_idx,  , drop = FALSE], label = y[test_idx])
-    
-    mod <- xgboost(
-      data = dtrain,
-      nrounds = 50,
-      objective = "binary:logistic",
-      eval_metric = "logloss",
-      max_depth = 4,
-      eta = 0.1,
-      subsample = 1,
-      colsample_bytree = 1,
-      min_child_weight = 1,
-      gamma = 0,
-      nthread = 1,  
-      verbose = 0
-    )
-    
-    p <- predict(mod, dtest)
-    pred <- ifelse(p >= 0.5, 1, 0)
-    mean(pred == y[test_idx])
-  })
-  
-  tibble(fold = sort(unique(df2$fold)), accuracy = fold_acc)
-}
-
-
-#store top 15 features 
-top15_features <- importance_all %>%
-  slice_max(Gain, n = 15) %>%
-  pull(Feature)
-
-
-# define cv runner 
-top_15_cv <- function(seed, nfold = 5) {
-  fold_map <- make_speaker_folds(
-    df_chunked_kitchensink,
-    group_col = "speaker",
-    nfold = nfold,
-    seed = seed
-  )
-  
-  df_cv <- df_chunked_kitchensink %>%
-    left_join(fold_map, by = "speaker")
-  
-  fit_xgb_groupcv_folds(df_cv, top15_features) %>%
-    mutate(model = "top15", seed = seed)
-}
-
-#set number of tirals and seed
-n_trials <- 50
-seeds <- 1:n_trials
-
-ks_out <- map(seeds, ~ top_15_cv(seed = .x, nfold = 5))
-ks_results <- bind_rows(ks_out)
-
-
-# summarise across folds within each seed, then across seeds
-ks_seed_level <- ks_results %>%
-  group_by(seed) %>%
-  summarise(mean_acc = mean(accuracy), .groups = "drop")
-
-ks_seed_level %>%
-  summarise(
-    mean_acc = mean(mean_acc),
-    n_trials = n(),
-    .groups = "drop"
-  )
-
-
-
 
 
 
