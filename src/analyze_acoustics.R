@@ -263,6 +263,11 @@ make_speaker_folds <- function(df, group_col = "speaker", nfold = 5, seed = 123)
   tibble(!!group_col := speakers, fold = fold_id)
 }
 
+# hyperparamters: 
+# eta: learning rate shrinks feature weights after each step to make boostin more conservative. Range [0,1]
+# gamma: minimum loss reduction required to make a further partition on a leaf node of a tree. larger = more conservative. Range: [0,inf]
+# 
+
 
 # # define grid search function (commented out because it takes forever to run)
 # xgb_groupcv_score <- function(df, features,
@@ -568,6 +573,65 @@ ks_seed_level %>%
     mean_acc = mean(mean_acc),
     n_trials = n(),
     .groups = "drop"
+  )
+
+
+
+##### try random forrest to see increase in accruacy #####
+library(ranger)
+
+rf_cv <- function(seed, nfold = 5) {
+  
+  # speaker-wise folds for this seed
+  fold_map <- make_speaker_folds(
+    df_chunked_kitchensink,
+    group_col = "speaker",
+    nfold = nfold,
+    seed = seed
+  )
+  
+  df_cv <- df_chunked_kitchensink %>%
+    left_join(fold_map, by = "speaker") %>%
+    mutate(y_factor = factor(y, levels = c(0, 1), labels = c("0", "1")))
+  
+  fold_levels <- sort(unique(df_cv$fold))
+  
+  fold_acc <- map_dbl(fold_levels, function(fk) {
+    
+    train_df <- df_cv %>% filter(fold != fk)
+    test_df  <- df_cv %>% filter(fold == fk)
+    
+    train_df <- train_df %>% drop_na(all_of(feature_cols_kitchensink), y_factor)
+    test_df  <- test_df  %>% drop_na(all_of(feature_cols_kitchensink), y_factor)
+    
+    rf_mod <- ranger(
+      formula = as.formula(
+        paste("y_factor ~", paste(feature_cols_kitchensink, collapse = " + "))
+      ),
+      data = train_df,
+      probability = TRUE,
+      seed = 999
+    )
+    
+    p1 <- predict(rf_mod, data = test_df)$predictions[, "1"]
+    pred <- ifelse(p1 >= 0.5, 1, 0)
+    
+    mean(pred == test_df$y)
+  })
+  
+  tibble(
+    seed = seed,
+    mean_acc = mean(fold_acc)
+  )
+}
+
+# run 50 CV rounds
+rf_results_50 <- map_dfr(seeds, rf_cv)
+
+# summary (directly comparable to your XGB results)
+rf_results_50 %>%
+  summarise(
+    mean_acc = mean(mean_acc)
   )
 
 
