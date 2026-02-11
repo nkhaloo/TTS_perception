@@ -580,8 +580,10 @@ speaker_long$ground_truth_label <- factor(
 
 
 plot_personality_by_gender <- function(data, gender_choice) {
+  
   df_gender <- data %>%
     filter(true_gender == gender_choice)
+  
   df_summary <- df_gender %>%
     group_by(trait, ground_truth_label) %>%
     summarise(
@@ -589,6 +591,7 @@ plot_personality_by_gender <- function(data, gender_choice) {
       se   = mean(se, na.rm = TRUE),
       .groups = "drop"
     )
+  
   ggplot(df_summary, aes(
     x = ground_truth_label,
     y = mean,
@@ -601,15 +604,18 @@ plot_personality_by_gender <- function(data, gender_choice) {
       linewidth = 0.8
     ) +
     facet_wrap(~ trait, scales = "free") +
-    scale_fill_manual(values = c(
-      "White"     = "#2b7de9",
-      "Black"     = "#c23b23",
-      "Ambiguous" = "gray40"
-    )) +
+    
+    scale_fill_manual(
+      name = "Perceptually-assigned Race",
+      values = c(
+        "White"     = "#2b7de9",
+        "Black"     = "#c23b23",
+        "Ambiguous" = "gray40"
+      )
+    ) +
     
     labs(
-      #title = paste("Personality Trait Ratings for", gender_choice),
-      x = "Perceptually-assigned label",
+      x = NULL,
       y = "Mean Rating"
     ) +
     
@@ -617,10 +623,13 @@ plot_personality_by_gender <- function(data, gender_choice) {
     
     theme_bw() +
     theme(
-      legend.position = "none",
-      strip.text = element_text(size = 12, face = "bold")
+      legend.position = "right",
+      axis.text.x  = element_blank(),
+      axis.ticks.x = element_blank(),
+      strip.text   = element_text(size = 12, face = "bold")
     )
 }
+
 
 plot_personality_by_gender(speaker_long, "Female")
 

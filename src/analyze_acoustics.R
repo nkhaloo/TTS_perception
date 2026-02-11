@@ -269,125 +269,125 @@ make_speaker_folds <- function(df, group_col = "speaker", nfold = 5, seed = 123)
 # 
 
 
-# # define grid search function (commented out because it takes forever to run)
-# xgb_groupcv_score <- function(df, features,
-#                               params,
-#                               nrounds,
-#                               folds_df,
-#                               threshold = 0.5) {
-#   
-#   df_cv <- df %>% left_join(folds_df, by = "speaker")
-#   if (!("fold" %in% names(df_cv))) stop("folds_df join failed (no 'fold' column after join).")
-#   
-#   X <- as.matrix(df_cv[, features])
-#   y <- df_cv$y
-#   fold_ids <- sort(unique(df_cv$fold))
-#   
-#   fold_acc <- map_dbl(fold_ids, function(fold_k) {
-#     test_idx  <- which(df_cv$fold == fold_k)
-#     train_idx <- setdiff(seq_len(nrow(df_cv)), test_idx)
-#     
-#     dtrain <- xgb.DMatrix(X[train_idx, , drop = FALSE], label = y[train_idx])
-#     dtest  <- xgb.DMatrix(X[test_idx,  , drop = FALSE], label = y[test_idx])
-#     
-#     bst <- xgb.train(
-#       params = params,
-#       data = dtrain,
-#       nrounds = nrounds,
-#       verbose = 0
-#     )
-#     
-#     p <- predict(bst, dtest)
-#     pred <- ifelse(p >= threshold, 1, 0)
-#     mean(pred == y[test_idx])
-#   })
-#   
-#   tibble(
-#     mean_acc = mean(fold_acc),
-#     sd_acc_folds = sd(fold_acc)
-#   )
-# }
-# 
-# # 2) grid runner: fixed folds for fair comparison across settings
-# run_gridsearch_groupcv_fixed <- function(df, features,
-#                                          grid,
-#                                          nfold = 5,
-#                                          fold_seed = 1,
-#                                          xgb_seed = 999,
-#                                          nthread = 1) {
-#   
-#   # fixed speaker folds for all configs
-#   folds_df <- make_speaker_folds(df, group_col = "speaker", nfold = nfold, seed = fold_seed)
-#   
-#   pmap_dfr(grid, function(nrounds, max_depth, eta, subsample,
-#                                  colsample_bytree, min_child_weight, gamma) {
-#     
-#     params <- list(
-#       objective = "binary:logistic",
-#       eval_metric = "logloss",
-#       max_depth = max_depth,
-#       eta = eta,
-#       subsample = subsample,
-#       colsample_bytree = colsample_bytree,
-#       min_child_weight = min_child_weight,
-#       gamma = gamma,
-#       seed = xgb_seed,
-#       nthread = nthread
-#     )
-#     
-#     score <- xgb_groupcv_score(
-#       df = df,
-#       features = features,
-#       params = params,
-#       nrounds = nrounds,
-#       folds_df = folds_df
-#     )
-#     
-#     tibble(
-#       objective = "binary:logistic",
-#       eval_metric = "logloss",
-#       nrounds = nrounds,
-#       max_depth = max_depth,
-#       eta = eta,
-#       subsample = subsample,
-#       colsample_bytree = colsample_bytree,
-#       min_child_weight = min_child_weight,
-#       gamma = gamma,
-#       mean_acc = score$mean_acc,
-#       sd_acc_folds = score$sd_acc_folds
-#     )
-#   }) %>%
-#     arrange(desc(mean_acc), sd_acc_folds)
-# }
-# 
-# # 3) define grid 
-# param_grid <- crossing(
-#   nrounds = c(50, 100, 150, 200, 250, 300),
-#   max_depth = c(2, 3, 4),
-#   eta = c(0.05, 0.1),
-#   subsample = c(0.8, 1.0),
-#   colsample_bytree = c(0.8, 1.0),
-#   min_child_weight = c(1, 5),
-#   gamma = c(0, 1)
-# )
-# 
-# # run the search
-# gs_results <- run_gridsearch_groupcv_fixed(
-#   df = df_chunked_kitchensink,
-#   features = feature_cols_kitchensink,
-#   grid = param_grid,
-#   nfold = 5,
-#   fold_seed = 1,   
-#   xgb_seed = 999,  # deterministic training
-#   nthread = 1      # deterministic across threads
-# )
-# 
-# # inspect top configs
-# gs_results %>% slice_head(n = 20)
-# 
-# # best config
-# best_cfg <- gs_results %>% slice_max(mean_acc, n = 1)
-# best_cfg
+# define grid search function (commented out because it takes forever to run)
+xgb_groupcv_score <- function(df, features,
+                              params,
+                              nrounds,
+                              folds_df,
+                              threshold = 0.5) {
+
+  df_cv <- df %>% left_join(folds_df, by = "speaker")
+  if (!("fold" %in% names(df_cv))) stop("folds_df join failed (no 'fold' column after join).")
+
+  X <- as.matrix(df_cv[, features])
+  y <- df_cv$y
+  fold_ids <- sort(unique(df_cv$fold))
+
+  fold_acc <- map_dbl(fold_ids, function(fold_k) {
+    test_idx  <- which(df_cv$fold == fold_k)
+    train_idx <- setdiff(seq_len(nrow(df_cv)), test_idx)
+
+    dtrain <- xgb.DMatrix(X[train_idx, , drop = FALSE], label = y[train_idx])
+    dtest  <- xgb.DMatrix(X[test_idx,  , drop = FALSE], label = y[test_idx])
+
+    bst <- xgb.train(
+      params = params,
+      data = dtrain,
+      nrounds = nrounds,
+      verbose = 0
+    )
+
+    p <- predict(bst, dtest)
+    pred <- ifelse(p >= threshold, 1, 0)
+    mean(pred == y[test_idx])
+  })
+
+  tibble(
+    mean_acc = mean(fold_acc),
+    sd_acc_folds = sd(fold_acc)
+  )
+}
+
+# 2) grid runner: fixed folds for fair comparison across settings
+run_gridsearch_groupcv_fixed <- function(df, features,
+                                         grid,
+                                         nfold = 5,
+                                         fold_seed = 1,
+                                         xgb_seed = 999,
+                                         nthread = 1) {
+
+  # fixed speaker folds for all configs
+  folds_df <- make_speaker_folds(df, group_col = "speaker", nfold = nfold, seed = fold_seed)
+
+  pmap_dfr(grid, function(nrounds, max_depth, eta, subsample,
+                                 colsample_bytree, min_child_weight, gamma) {
+
+    params <- list(
+      objective = "binary:logistic",
+      eval_metric = "logloss",
+      max_depth = max_depth,
+      eta = eta,
+      subsample = subsample,
+      colsample_bytree = colsample_bytree,
+      min_child_weight = min_child_weight,
+      gamma = gamma,
+      seed = xgb_seed,
+      nthread = nthread
+    )
+
+    score <- xgb_groupcv_score(
+      df = df,
+      features = features,
+      params = params,
+      nrounds = nrounds,
+      folds_df = folds_df
+    )
+
+    tibble(
+      objective = "binary:logistic",
+      eval_metric = "logloss",
+      nrounds = nrounds,
+      max_depth = max_depth,
+      eta = eta,
+      subsample = subsample,
+      colsample_bytree = colsample_bytree,
+      min_child_weight = min_child_weight,
+      gamma = gamma,
+      mean_acc = score$mean_acc,
+      sd_acc_folds = score$sd_acc_folds
+    )
+  }) %>%
+    arrange(desc(mean_acc), sd_acc_folds)
+}
+
+# 3) define grid
+param_grid <- crossing(
+  nrounds = c(50, 100, 150, 200, 250, 300),
+  max_depth = c(2, 3, 4),
+  eta = c(0.05, 0.1),
+  subsample = c(0.8, 1.0),
+  colsample_bytree = c(0.8, 1.0),
+  min_child_weight = c(1, 5),
+  gamma = c(0, 1)
+)
+
+# run the search
+gs_results <- run_gridsearch_groupcv_fixed(
+  df = df_chunked_kitchensink,
+  features = feature_cols_kitchensink,
+  grid = param_grid,
+  nfold = 5,
+  fold_seed = 1,
+  xgb_seed = 999,  # deterministic training
+  nthread = 1      # deterministic across threads
+)
+
+# inspect top configs
+gs_results %>% slice_head(n = 20)
+
+# best config
+best_cfg <- gs_results %>% slice_max(mean_acc, n = 1)
+best_cfg
 
 
 ########fit best model on all data#######
@@ -448,16 +448,17 @@ importance_pretty <- importance_all %>%
       str_replace("^DF", "Formant Dispersion") %>%
       str_replace("^s", "") %>%
       
-      # chunk labels
-      str_replace("_beg$", " (onset)") %>%
-      str_replace("_mid$", " (midpoint)") %>%
-      str_replace("_end$", " (offset)") %>%
-      
       # vowel dummies
       str_replace("^vowel_", "Vowel = ") %>%
       
-      # cleanup
+      # cleanup underscores first
       str_replace_all("_", " ") %>%
+      
+      # chunk labels as standalone tokens (works for both mean + CoV)
+      str_replace_all("\\bbeg\\b", "onset") %>%
+      str_replace_all("\\bmid\\b", "midpoint") %>%
+      str_replace_all("\\bend\\b", "offset") %>%
+      
       str_squish()
   )
 
