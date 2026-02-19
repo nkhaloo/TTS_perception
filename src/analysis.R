@@ -579,61 +579,75 @@ speaker_long$ground_truth_label <- factor(
 )
 
 
-plot_personality_by_gender <- function(data, gender_choice) {
-  
-  df_gender <- data %>%
-    filter(true_gender == gender_choice)
-  
-  df_summary <- df_gender %>%
-    group_by(trait, ground_truth_label) %>%
-    summarise(
-      mean = mean(mean, na.rm = TRUE),
-      se   = mean(se, na.rm = TRUE),
-      .groups = "drop"
+df_summary_both <- speaker_long %>%
+  filter(true_gender %in% c("Female", "Male")) %>%
+  group_by(true_gender, trait, ground_truth_label) %>%
+  summarise(
+    mean = mean(mean, na.rm = TRUE),
+    se   = mean(se,   na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  mutate(
+    true_gender = factor(true_gender, levels = c("Female", "Male")),
+    trait = factor(trait, levels = c(
+      "competent", "trustworthy", "friendly",
+      "funny", "professional", "pleasant"
+    )),
+    # 🔑 THIS LINE CONTROLS BAR ORDER
+    ground_truth_label = factor(
+      ground_truth_label,
+      levels = c("White", "Black", "Ambiguous")
     )
-  
-  ggplot(df_summary, aes(
-    x = ground_truth_label,
-    y = mean,
-    fill = ground_truth_label
-  )) +
-    geom_col(color = "black") +
-    geom_errorbar(
-      aes(ymin = mean - se, ymax = mean + se),
-      width = 0.25,
-      linewidth = 0.8
-    ) +
-    facet_wrap(~ trait, scales = "free") +
-    
-    scale_fill_manual(
-      name = "Perceptually-assigned Race",
-      values = c(
-        "White"     = "#2b7de9",
-        "Black"     = "#c23b23",
-        "Ambiguous" = "gray40"
-      )
-    ) +
-    
-    labs(
-      x = NULL,
-      y = "Mean Rating"
-    ) +
-    
-    scale_y_continuous(expand = c(0, 0), limits = c(0, 6)) +
-    
-    theme_bw() +
-    theme(
-      legend.position = "right",
-      axis.text.x  = element_blank(),
-      axis.ticks.x = element_blank(),
-      strip.text   = element_text(size = 12, face = "bold")
+  )
+
+pers_ratings_plot <- ggplot(df_summary_both, aes(
+  x = trait,
+  y = mean,
+  fill = ground_truth_label
+)) +
+  geom_col(
+    position = position_dodge(width = 0.8),
+    width = 0.7,
+    color = "black"
+  ) +
+  geom_errorbar(
+    aes(ymin = mean - se, ymax = mean + se),
+    position = position_dodge(width = 0.8),
+    width = 0.2,
+    linewidth = 0.6
+  ) +
+  facet_wrap(~ true_gender, ncol = 1) +
+  scale_fill_manual(
+    name = "Perceptually-assigned Race",
+    values = c(
+      "White"     = "#2b7de9",
+      "Black"     = "#c23b23",
+      "Ambiguous" = "gray40"
     )
-}
+  ) +
+  labs(x = "Personality Trait", y = "Mean Rating") +
+  scale_y_continuous(limits = c(0, 6), expand = c(0, 0)) +
+  theme_bw(base_size = 11) +
+  theme(
+    legend.position = "bottom",
+    legend.direction = "horizontal",
+    
+    legend.title = element_text(size = 15),
+    legend.text  = element_text(size = 15),
+    
+    axis.text.x = element_text(size = 13, angle = 25, hjust = 1),
+    strip.text  = element_text(size = 12, face = "bold")
+  )+
+  guides(fill = guide_legend(nrow = 1))
 
 
-plot_personality_by_gender(speaker_long, "Female")
-
-plot_personality_by_gender(speaker_long, "Male")
+ggsave(
+  filename = "/Users/noahkhaloo/Desktop/TTS_perception/figures/pers_ratings.png",
+  plot = pers_ratings_plot,
+  width = 10,
+  height = 8,
+  dpi = 300
+)
 
 
 

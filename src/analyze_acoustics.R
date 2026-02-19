@@ -3,6 +3,10 @@ library(lme4)
 library(lmerTest)
 library(xgboost)
 library(purrr)
+library(ggh4x)
+library(patchwork)
+library(grid)
+library(cowplot)
 
 # set script seed
 set.seed(555)
@@ -269,125 +273,125 @@ make_speaker_folds <- function(df, group_col = "speaker", nfold = 5, seed = 123)
 # 
 
 
-# define grid search function (commented out because it takes forever to run)
-xgb_groupcv_score <- function(df, features,
-                              params,
-                              nrounds,
-                              folds_df,
-                              threshold = 0.5) {
-
-  df_cv <- df %>% left_join(folds_df, by = "speaker")
-  if (!("fold" %in% names(df_cv))) stop("folds_df join failed (no 'fold' column after join).")
-
-  X <- as.matrix(df_cv[, features])
-  y <- df_cv$y
-  fold_ids <- sort(unique(df_cv$fold))
-
-  fold_acc <- map_dbl(fold_ids, function(fold_k) {
-    test_idx  <- which(df_cv$fold == fold_k)
-    train_idx <- setdiff(seq_len(nrow(df_cv)), test_idx)
-
-    dtrain <- xgb.DMatrix(X[train_idx, , drop = FALSE], label = y[train_idx])
-    dtest  <- xgb.DMatrix(X[test_idx,  , drop = FALSE], label = y[test_idx])
-
-    bst <- xgb.train(
-      params = params,
-      data = dtrain,
-      nrounds = nrounds,
-      verbose = 0
-    )
-
-    p <- predict(bst, dtest)
-    pred <- ifelse(p >= threshold, 1, 0)
-    mean(pred == y[test_idx])
-  })
-
-  tibble(
-    mean_acc = mean(fold_acc),
-    sd_acc_folds = sd(fold_acc)
-  )
-}
-
-# 2) grid runner: fixed folds for fair comparison across settings
-run_gridsearch_groupcv_fixed <- function(df, features,
-                                         grid,
-                                         nfold = 5,
-                                         fold_seed = 1,
-                                         xgb_seed = 999,
-                                         nthread = 1) {
-
-  # fixed speaker folds for all configs
-  folds_df <- make_speaker_folds(df, group_col = "speaker", nfold = nfold, seed = fold_seed)
-
-  pmap_dfr(grid, function(nrounds, max_depth, eta, subsample,
-                                 colsample_bytree, min_child_weight, gamma) {
-
-    params <- list(
-      objective = "binary:logistic",
-      eval_metric = "logloss",
-      max_depth = max_depth,
-      eta = eta,
-      subsample = subsample,
-      colsample_bytree = colsample_bytree,
-      min_child_weight = min_child_weight,
-      gamma = gamma,
-      seed = xgb_seed,
-      nthread = nthread
-    )
-
-    score <- xgb_groupcv_score(
-      df = df,
-      features = features,
-      params = params,
-      nrounds = nrounds,
-      folds_df = folds_df
-    )
-
-    tibble(
-      objective = "binary:logistic",
-      eval_metric = "logloss",
-      nrounds = nrounds,
-      max_depth = max_depth,
-      eta = eta,
-      subsample = subsample,
-      colsample_bytree = colsample_bytree,
-      min_child_weight = min_child_weight,
-      gamma = gamma,
-      mean_acc = score$mean_acc,
-      sd_acc_folds = score$sd_acc_folds
-    )
-  }) %>%
-    arrange(desc(mean_acc), sd_acc_folds)
-}
-
-# 3) define grid
-param_grid <- crossing(
-  nrounds = c(50, 100, 150, 200, 250, 300),
-  max_depth = c(2, 3, 4),
-  eta = c(0.05, 0.1),
-  subsample = c(0.8, 1.0),
-  colsample_bytree = c(0.8, 1.0),
-  min_child_weight = c(1, 5),
-  gamma = c(0, 1)
-)
-
-# run the search
-gs_results <- run_gridsearch_groupcv_fixed(
-  df = df_chunked_kitchensink,
-  features = feature_cols_kitchensink,
-  grid = param_grid,
-  nfold = 5,
-  fold_seed = 1,
-  xgb_seed = 999,  # deterministic training
-  nthread = 1      # deterministic across threads
-)
-
-# inspect top configs
-gs_results %>% slice_head(n = 20)
-
-# best config
-best_cfg <- gs_results %>% slice_max(mean_acc, n = 1)
-best_cfg
+# # define grid search function (commented out because it takes forever to run)
+# xgb_groupcv_score <- function(df, features,
+#                               params,
+#                               nrounds,
+#                               folds_df,
+#                               threshold = 0.5) {
+# 
+#   df_cv <- df %>% left_join(folds_df, by = "speaker")
+#   if (!("fold" %in% names(df_cv))) stop("folds_df join failed (no 'fold' column after join).")
+# 
+#   X <- as.matrix(df_cv[, features])
+#   y <- df_cv$y
+#   fold_ids <- sort(unique(df_cv$fold))
+# 
+#   fold_acc <- map_dbl(fold_ids, function(fold_k) {
+#     test_idx  <- which(df_cv$fold == fold_k)
+#     train_idx <- setdiff(seq_len(nrow(df_cv)), test_idx)
+# 
+#     dtrain <- xgb.DMatrix(X[train_idx, , drop = FALSE], label = y[train_idx])
+#     dtest  <- xgb.DMatrix(X[test_idx,  , drop = FALSE], label = y[test_idx])
+# 
+#     bst <- xgb.train(
+#       params = params,
+#       data = dtrain,
+#       nrounds = nrounds,
+#       verbose = 0
+#     )
+# 
+#     p <- predict(bst, dtest)
+#     pred <- ifelse(p >= threshold, 1, 0)
+#     mean(pred == y[test_idx])
+#   })
+# 
+#   tibble(
+#     mean_acc = mean(fold_acc),
+#     sd_acc_folds = sd(fold_acc)
+#   )
+# }
+# 
+# # 2) grid runner: fixed folds for fair comparison across settings
+# run_gridsearch_groupcv_fixed <- function(df, features,
+#                                          grid,
+#                                          nfold = 5,
+#                                          fold_seed = 1,
+#                                          xgb_seed = 999,
+#                                          nthread = 1) {
+# 
+#   # fixed speaker folds for all configs
+#   folds_df <- make_speaker_folds(df, group_col = "speaker", nfold = nfold, seed = fold_seed)
+# 
+#   pmap_dfr(grid, function(nrounds, max_depth, eta, subsample,
+#                                  colsample_bytree, min_child_weight, gamma) {
+# 
+#     params <- list(
+#       objective = "binary:logistic",
+#       eval_metric = "logloss",
+#       max_depth = max_depth,
+#       eta = eta,
+#       subsample = subsample,
+#       colsample_bytree = colsample_bytree,
+#       min_child_weight = min_child_weight,
+#       gamma = gamma,
+#       seed = xgb_seed,
+#       nthread = nthread
+#     )
+# 
+#     score <- xgb_groupcv_score(
+#       df = df,
+#       features = features,
+#       params = params,
+#       nrounds = nrounds,
+#       folds_df = folds_df
+#     )
+# 
+#     tibble(
+#       objective = "binary:logistic",
+#       eval_metric = "logloss",
+#       nrounds = nrounds,
+#       max_depth = max_depth,
+#       eta = eta,
+#       subsample = subsample,
+#       colsample_bytree = colsample_bytree,
+#       min_child_weight = min_child_weight,
+#       gamma = gamma,
+#       mean_acc = score$mean_acc,
+#       sd_acc_folds = score$sd_acc_folds
+#     )
+#   }) %>%
+#     arrange(desc(mean_acc), sd_acc_folds)
+# }
+# 
+# # 3) define grid
+# param_grid <- crossing(
+#   nrounds = c(50, 100, 150, 200, 250, 300),
+#   max_depth = c(2, 3, 4),
+#   eta = c(0.05, 0.1),
+#   subsample = c(0.8, 1.0),
+#   colsample_bytree = c(0.8, 1.0),
+#   min_child_weight = c(1, 5),
+#   gamma = c(0, 1)
+# )
+# 
+# # run the search
+# gs_results <- run_gridsearch_groupcv_fixed(
+#   df = df_chunked_kitchensink,
+#   features = feature_cols_kitchensink,
+#   grid = param_grid,
+#   nfold = 5,
+#   fold_seed = 1,
+#   xgb_seed = 999,  # deterministic training
+#   nthread = 1      # deterministic across threads
+# )
+# 
+# # inspect top configs
+# gs_results %>% slice_head(n = 20)
+# 
+# # best config
+# best_cfg <- gs_results %>% slice_max(mean_acc, n = 1)
+# best_cfg
 
 
 ########fit best model on all data#######
@@ -467,7 +471,7 @@ top15_pretty <- importance_pretty %>%
   slice_max(Gain, n = 15) %>%
   arrange(Gain)
 
-ggplot(
+full_model_importance_plot <- ggplot(
   top15_pretty,
   aes(x = Gain, y = reorder(Feature_label, Gain))
 ) +
@@ -476,8 +480,19 @@ ggplot(
     x = "Gain",
     y = "Feature"
   ) +
-  theme_minimal(base_size = 13)
+  theme_minimal(base_size = 13) +
+  theme(
+    axis.text.y = element_text(size = 14)  # ← larger y-axis labels
+  )
 
+
+ggsave(
+  filename = "/Users/noahkhaloo/Desktop/TTS_perception/figures/full_model_importance.png",
+  plot = full_model_importance_plot,
+  width = 8,
+  height = 6,
+  dpi = 300
+)
 
 
 ##### cross validate a model with only top 15 features and check accuracy #####
@@ -629,7 +644,7 @@ rf_cv <- function(seed, nfold = 5) {
 # run 50 CV rounds
 rf_results_50 <- map_dfr(seeds, rf_cv)
 
-# summary (directly comparable to your XGB results)
+# summary 
 rf_results_50 %>%
   summarise(
     mean_acc = mean(mean_acc)
@@ -733,65 +748,96 @@ df_mean9_F12 <- df_token_F12 %>%
     feature_label = recode(feature, sF1 = "F1", sF2 = "F2")
   )
 
-ggplot(
-  df_mean9_F12,
-  aes(
-    x = t_norm_center,
-    y = mean_value,
-    color = ground_truth_label,
-    fill  = ground_truth_label
-  )
-) +
-  geom_ribbon(
-    aes(ymin = ci_low, ymax = ci_high),
-    alpha = 0.2,
-    color = NA,
-    show.legend = FALSE
-  ) +
-  geom_line(linewidth = 1) +
-  geom_point(size = 2) +
-  facet_grid(feature_label ~ vowel, scales = "free_y") +
-  scale_x_continuous(
-    breaks = seq(0, 1, by = 0.25),
-    limits = c(0, 1),
-    labels = scales::label_number(
-      accuracy = 0.1
+
+df_plot <- df_mean9_F12 %>%
+  mutate(
+    vowel_plot = recode(vowel,
+                        "e"  = "ɛ",
+                        "ei" = "ɛi",
+                        .default = vowel
     )
-  ) +
-  labs(
-    x = "Normalized Time",
-    y = "Mean formant value",
-    color = "Perceptually-Assigned Race"
-  ) +
-  guides(fill = "none") +
-  theme_minimal(base_size = 13) +   # ← FIRST
-  theme(
-    ## VOWEL labels (top strips)
-    strip.text.x = element_text(
-      size = 18,
-      face = "bold"
-    ),
-    
-    panel.spacing.x = unit(1.5, "lines"),
-    
-    strip.text.y = element_text(
-      size = 18,
-      face = "bold",
-      angle = 0
-    ),
-    
-    strip.placement = "outside",
-    
-    axis.text.x = element_text(size = 13),
-    axis.text.y = element_text(size = 14)
   )
+
+top_vowels    <- c("æ", "æi", "ɑ")
+bottom_vowels <- c("ɛ", "ɛi", "i", "ɪ")
+
+df_plot <- df_plot %>%
+  mutate(
+    vowel_plot = factor(vowel_plot, levels = c(top_vowels, bottom_vowels)),
+    feature_label = factor(feature_label, levels = c("F1", "F2"))
+  )
+
+make_block <- function(dat, vowels, show_x_title) {
+  dat %>%
+    filter(vowel_plot %in% vowels) %>%
+    mutate(vowel_plot = factor(vowel_plot, levels = vowels)) %>%
+    ggplot(aes(
+      x = t_norm_center,
+      y = mean_value,
+      color = ground_truth_label,
+      fill  = ground_truth_label
+    )) +
+    geom_ribbon(aes(ymin = ci_low, ymax = ci_high),
+                alpha = 0.2, color = NA, show.legend = FALSE) +
+    geom_line(linewidth = 1) +
+    geom_point(size = 2) +
+    facet_grid(feature_label ~ vowel_plot, scales = "free_y", switch = "both") +
+    scale_x_continuous(
+      breaks = seq(0, 1, by = 0.25),
+      limits = c(0, 1),
+      labels = scales::label_number(accuracy = 0.1)
+    ) +
+    labs(
+      x = if (show_x_title) "Normalized Time" else NULL,
+      y = NULL,
+      color = "Perceptually-assigned Race"
+    ) +
+    guides(
+      color = guide_legend(direction = "vertical", title.position = "top"),
+      fill = "none"
+    ) +
+    theme_minimal(base_size = 13) +
+    theme(
+      strip.text.x = element_text(size = 18, face = "bold"),
+      strip.text.y = element_text(size = 18, face = "bold", angle = 0),
+      strip.placement = "outside",
+      axis.text.x  = element_text(size = 15),
+      axis.text.y  = element_text(size = 15),
+      axis.title.x = if (show_x_title) element_text(size = 20) else element_blank(),
+      axis.title.y = element_blank(),
+      panel.spacing.x = unit(1.2, "lines"),
+      panel.spacing.y = unit(1.0, "lines"),
+      legend.position = "right",
+      legend.text  = element_text(size = 16),
+      legend.title = element_blank()
+    )
+}
+
+top_block <- make_block(df_plot, top_vowels, show_x_title = FALSE)
+bottom_block <- make_block(df_plot, bottom_vowels, show_x_title = TRUE)
+
+combo <- (top_block / bottom_block) + plot_layout(guides = "collect")
+
+formant_plot <- combo
+
+formant_plot
+
+
+ggsave(
+  "/Users/noahkhaloo/Desktop/TTS_perception/figures/formants.png",
+  formant_plot,
+  width = 8.5,
+  height = 6,
+  dpi = 300
+)
+
 
 
 # plot top voice quality features 
 df_clean_male <- df_clean %>%
   filter(gender == "male")
 
-vars_to_plot <- c("H1Res", "H2KH5Kc", "H42Kc", "sF4", "H2H4c", "CPP")
+vars_to_plot <- c("H1Res", "H2KH5Kc", "sF4", "H2H4c", "CPP")
 n_bins <- 9
 
 df_norm9 <- df_clean_male %>%
@@ -839,7 +885,7 @@ df_mean9 <- df_norm9 %>%
   )
 
 
-ggplot(
+mean_structure_plot <- ggplot(
   df_mean9,
   aes(
     x = t_norm_center,
@@ -856,7 +902,7 @@ ggplot(
   ) +
   geom_line(linewidth = 1) +
   geom_point(size = 2) +
-  facet_wrap(~ feature_label, scales = "free_y") +
+  ggh4x::facet_wrap2(~ feature_label, scales = "free_y", axes = "all") +  # <-- KEY
   scale_x_continuous(
     breaks = seq(0, 1, by = 0.25),
     limits = c(0, 1)
@@ -867,7 +913,182 @@ ggplot(
     color = "Perceptually-Assigned Race"
   ) +
   guides(fill = "none") +
-  theme_minimal()
+  theme_minimal(base_size = 12) +
+  theme(
+    strip.text   = element_text(size = 14, face = "bold"),
+    axis.text.x  = element_text(size = 13),
+    axis.text.y  = element_text(size = 13),
+    axis.title.x = element_text(size = 14),
+    axis.title.y = element_text(size = 14),
+    panel.spacing.y = unit(1.2, "lines")
+  )
+
+ggsave(
+  filename = "/Users/noahkhaloo/Desktop/TTS_perception/figures/mean_structure.png",
+  plot = mean_structure_plot,
+  width = 12,
+  height = 10,   # <- increase this if you have lots of facets
+  dpi = 300
+)
+
+
+
+
+##### compute speaker specific accuracies ####
+# Create fixed speaker-wise folds (set seed however you like)
+folds_df <- make_speaker_folds(
+  df_chunked_kitchensink,
+  group_col = "speaker",
+  nfold = 5,
+  seed = 1
+)
+
+df_cv <- df_chunked_kitchensink %>%
+  left_join(folds_df, by = "speaker")
+
+# CV function that returns out-of-fold predictions (one row per token)
+xgb_groupcv_predictions <- function(df, features,
+                                    nrounds = 50,
+                                    threshold = 0.5) {
+  stopifnot("fold" %in% names(df))
+  
+  X <- as.matrix(df[, features])
+  y <- df$y
+  
+  fold_levels <- sort(unique(df$fold))
+  
+  map_dfr(fold_levels, function(fk) {
+    test_idx  <- which(df$fold == fk)
+    train_idx <- setdiff(seq_len(nrow(df)), test_idx)
+    
+    dtrain <- xgb.DMatrix(X[train_idx, , drop = FALSE], label = y[train_idx])
+    dtest  <- xgb.DMatrix(X[test_idx,  , drop = FALSE], label = y[test_idx])
+    
+    mod <- xgboost(
+      data = dtrain,
+      nrounds = nrounds,
+      objective = "binary:logistic",
+      eval_metric = "logloss",
+      max_depth = 4,
+      eta = 0.1,
+      subsample = 1,
+      colsample_bytree = 1,
+      min_child_weight = 1,
+      gamma = 0,
+      seed = 999,
+      nthread = 1,
+      verbose = 0
+    )
+    
+    p <- predict(mod, dtest)
+    tibble(
+      speaker  = df$speaker[test_idx],
+      fold     = fk,
+      y_true   = y[test_idx],
+      y_prob   = p,
+      y_pred   = ifelse(p >= threshold, 1, 0),
+      correct  = y_pred == y_true
+    )
+  })
+}
+
+# Run CV predictions using the best config (edit nrounds if needed)
+cv_preds <- xgb_groupcv_predictions(
+  df = df_cv,
+  features = feature_cols_kitchensink,
+  nrounds = 50,       # <- set to best_cfg$nrounds if your grid search chose a different value
+  threshold = 0.5
+)
+
+
+# Exact (Clopper–Pearson) 95% binomial CI for per-speaker accuracy
+speaker_accuracy_ci <- cv_preds %>%
+  group_by(speaker) %>%
+  summarise(
+    n_tokens  = n(),
+    n_correct = sum(correct),
+    accuracy  = n_correct / n_tokens,
+    .groups = "drop"
+  ) %>%
+  rowwise() %>%
+  mutate(
+    ci_low  = binom.test(n_correct, n_tokens)$conf.int[1],
+    ci_high = binom.test(n_correct, n_tokens)$conf.int[2]
+  ) %>%
+  ungroup() %>%
+  arrange(accuracy)
+
+speaker_accuracy_ci
+
+# add race label from speaker ID
+speaker_accuracy_ci <- speaker_accuracy_ci %>%
+  mutate(
+    race = case_when(
+      str_starts(speaker, "WM") ~ "White",
+      str_starts(speaker, "BM") ~ "Black",
+      TRUE ~ NA_character_
+    )
+  )
+
+# mean accuracy by race (speaker-averaged)
+race_mean_accuracy <- speaker_accuracy_ci %>%
+  group_by(race) %>%
+  summarise(
+    n_speakers = n(),
+    mean_accuracy = mean(accuracy),
+    sd_accuracy   = sd(accuracy),
+    .groups = "drop"
+  )
+
+race_mean_accuracy
+
+
+# re-fit reduced model
+cv_preds_top15 <- xgb_groupcv_predictions(
+  df = df_cv,
+  features = top15_features,
+  nrounds = 50,      # same as your reduced model
+  threshold = 0.5
+)
+
+
+speaker_accuracy_top15 <- cv_preds_top15 %>%
+  group_by(speaker) %>%
+  summarise(
+    n_tokens  = n(),
+    n_correct = sum(correct),
+    accuracy  = n_correct / n_tokens,
+    .groups = "drop"
+  ) %>%
+  rowwise() %>%
+  mutate(
+    ci_low  = binom.test(n_correct, n_tokens)$conf.int[1],
+    ci_high = binom.test(n_correct, n_tokens)$conf.int[2]
+  ) %>%
+  ungroup() %>%
+  arrange(accuracy)
+
+speaker_accuracy_top15
+
+
+race_accuracy_top15 <- speaker_accuracy_top15 %>%
+  mutate(
+    race = case_when(
+      str_starts(speaker, "WM") ~ "White",
+      str_starts(speaker, "BM") ~ "Black",
+      TRUE ~ NA_character_
+    )
+  ) %>%
+  group_by(race) %>%
+  summarise(
+    n_speakers    = n(),
+    mean_accuracy = mean(accuracy),
+    sd_accuracy   = sd(accuracy),
+    .groups = "drop"
+  )
+
+race_accuracy_top15
+
 
 
 
