@@ -1,6 +1,6 @@
 # TTS_perception
 
-This repository contains the code used in Khaloo, Holliday, and Creel (in-prep). Perception and variability of African American English in TTS speech. 
+This repository contains the code used in Khaloo, Holliday, and Creel (Accepted: Interspeech 2026). Perception and variability of African American English in TTS speech. 
 This project tests whether people can converge on a perception of race in when presented with various Text-to-speech (TTS) voices. It also tests whether people assing anthropomorphic traits associated with race to said TTS voices. 
 
 ## SRC 
