@@ -13,3 +13,14 @@ The `src` folder contains the following scripts:
 ## Experiment
 The `experiment` folder contains the audio for the attention check, as well as the .html file used to host the online experiment. 
 
+## Results
+A brief summary of the online experiment data (raw survey CSV):
+
+- **Total rows (responses):** 12,201
+- **Unique participants:** 160
+- **Unique audio files evaluated:** 160
+- **Unique speakers/stimuli:** 32
+- **Collection date:** 2025-10-31
+
+The full responses are stored in `data/survey_results/survey_results.csv`.
+

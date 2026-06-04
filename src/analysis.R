@@ -164,7 +164,7 @@ df <- df %>%
 # -------------------------------
 # Density plot of %Reported Black
 # -------------------------------
-df %>% 
+dens_plot <- df %>% 
   distinct(speaker, percent_reported_black) %>%
   filter(!is.na(percent_reported_black)) %>%
   mutate(category = substr(speaker, 1, 2)) %>%
@@ -217,6 +217,14 @@ df %>%
     axis.line = element_line(color = "black")
   )
 
+
+ggsave(
+  filename = "/Users/noahkhaloo/Desktop/TTS_perception/figures/dens_plot.png",
+  plot = dens_plot,
+  width = 10,
+  height = 8,
+  dpi = 300
+)
 
 
 
@@ -371,7 +379,7 @@ speaker_clusters2 <- speaker_features %>%
   ))
 
 
-ggplot(speaker_clusters2,
+cluster_assignment <- ggplot(speaker_clusters2,
        aes(x = percent_reported_black,
            y = fct_reorder(speaker, percent_reported_black),
            color = cluster)) +
@@ -400,6 +408,14 @@ ggplot(speaker_clusters2,
     axis.text.x = element_text(color = "black"),
     strip.text = element_text(face = "bold", size = 14)
   )
+
+ggsave(
+  filename = "/Users/noahkhaloo/Desktop/TTS_perception/figures/cluster_assignment.png",
+  plot = cluster_assignment,
+  width = 10,
+  height = 8,
+  dpi = 300
+)
 
 
 # -------------------------------
@@ -635,9 +651,15 @@ pers_ratings_plot <- ggplot(df_summary_both, aes(
     legend.title = element_text(size = 15),
     legend.text  = element_text(size = 15),
     
-    axis.text.x = element_text(size = 13, angle = 25, hjust = 1),
-    strip.text  = element_text(size = 12, face = "bold")
-  )+
+    axis.text.x = element_text(size = 16, angle = 25, hjust = 1),
+    
+    # 🔹 Facet titles: Male / Female
+    strip.text = element_text(size = 16, face = "bold"),
+    
+    # 🔹 Axis titles
+    axis.title.x = element_text(size = 16),
+    axis.title.y = element_text(size = 16)
+  ) +
   guides(fill = guide_legend(nrow = 1))
 
 
